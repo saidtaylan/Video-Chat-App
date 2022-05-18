@@ -6,169 +6,77 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { nanoid } from 'nanoid';
 import { UserService } from 'src/user/user.service';
 import { Model } from 'mongoose';
-import { Room } from './models/room.model';
+import { Room } from './entities/room.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { AuthService } from 'src/auth/auth.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { RoomModel } from 'src/room/room.model';
 
 @Injectable()
 export class RoomService {
   constructor(
     private readonly userService: UserService,
-    @InjectModel('room') private roomModel: Model<Room>,
+    @InjectModel('room') private roomModeli: Model<Room>,
+    private readonly roomModel: RoomModel,
     private authService: AuthService,
   ) {}
 
   async create(userId: string, createRoomInput: CreateRoomDto) {
-    const uniqueURL = nanoid();
-    let passcode: string;
-    let link: string;
-    if (createRoomInput.passcode) {
-      passcode = createRoomInput.passcode;
-      link = `${process.env.BASE_URL}/r/${uniqueURL}`;
-    } else {
-      passcode = nanoid(8);
-      link = `${process.env.BASE_URL}/r/${uniqueURL}`;
+    const room = await this.roomModel.insert(userId, createRoomInput);
+    if (!room) {
+      throw new HttpException(
+        'could not create the room',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
     }
-    const hashedPass = await this.authService.hashPassword(passcode);
-    console.log('createRoomInput :>> ', createRoomInput);
-    const newRoom = await new this.roomModel({
-      owner: userId,
-      ...createRoomInput,
-      link: uniqueURL,
-      passcode: hashedPass,
-    }).save();
-    console.log('newRoom :>> ', newRoom);
-    if (!newRoom) {
-      throw new NotImplementedException('room cannot created');
-    }
-    const resp = { link, ...newRoom.toObject({ getters: true }) };
-    delete resp.passcode;
-    return resp;
+    return room;
   }
 
   async getRooms(userId: string, type?: string) {
     if (type) {
-      const rooms = await this.roomModel
-        .find({ owner: userId, type })
-        .populate({
-          path: 'owner',
-          select: 'name lastName email role profileImage',
-        })
-        .populate({
-          path: 'participants',
-          select: 'name lastName email role profileImage',
-        })
-        .populate({
-          path: 'hosts',
-          select: 'name lastName email role profileImage',
-        });
+      const rooms = await this.roomModel.findMany({ owner: userId, type })
       if (rooms.length > 0) {
-        const roomsResp = rooms.map((room) => {
-          delete room.passcode;
-          return room;
-        });
-        return roomsResp;
+        return rooms
       }
-      throw new NotFoundException('cannot found any room');
+      throw new NotFoundException('could not found any room');
     }
-    const rooms = await this.roomModel
-      .find({ owner: userId })
-      .populate({
-        path: 'owner',
-        select: 'name lastName email role profileImage',
-      })
-      .populate({
-        path: 'participants',
-        select: 'name lastName email role profileImage',
-      })
-      .populate({
-        path: 'hosts',
-        select: 'name lastName email role profileImage',
-      });
-    console.log('rooms :>> ', rooms);
-    if (rooms.length > 0) {
-      const roomsResp = rooms.map((room) => {
-        delete room.passcode;
-        return room;
-      });
-      return roomsResp;
-    }
-    throw new NotFoundException('cannot found any room');
+    const rooms = await this.roomModel.findMany({ owner: userId });
+    if (rooms.length > 0) return rooms
+    throw new NotFoundException('could not found any room ');
   }
 
   async getById(id: string) {
-    const room = await this.roomModel
-      .findById(id)
-      .populate({
-        path: 'owner',
-        select: 'name lastName email role profileImage',
-      })
-      .populate({
-        path: 'participants',
-        select: 'name lastName email role profileImage',
-      })
-      .populate({
-        path: 'hosts',
-        select: 'name lastName email role profileImage',
-      })
-      .lean();
-    if (room) {
-      delete room.passcode;
-      return room;
-    }
+    const room = await this.roomModel.findById(id);
+    if (room) return room
     throw new NotFoundException('cannot found such a room');
   }
 
   async getByLink(link: string) {
-    const room = await this.roomModel
-      .findOne({ link })
-      .populate({
-        path: 'owner',
-        select: 'name lastName email role profileImage',
-      })
-      .populate({
-        path: 'participants',
-        select: 'name lastName email role profileImage',
-      })
-      .populate({
-        path: 'hosts',
-        select: 'name lastName email role profileImage',
-      });
-    if (room) {
-      delete room.passcode;
-      return room;
-    }
+    const room = await this.roomModel.findOne({ link });
+    if (room) return room
     throw new NotFoundException('cannot found such a room');
   }
 
   async getOne(payload: {}) {
     const room = await this.roomModel.findOne(payload);
-    if (room) return room;
+    if (room) return room
     throw new NotFoundException('cannot found such a room');
   }
 
   async updateRoom(id: string, updatePayload: UpdateRoomDto) {
-    const updatedRoom = await this.roomModel.findByIdAndUpdate(
-      id,
-      updatePayload,
-      { new: true },
-    );
+    const updatedRoom = await this.roomModel.update(id, updatePayload);
     if (updatedRoom) {
-      delete updatedRoom.passcode;
       return updatedRoom;
     }
     throw new NotImplementedException('the room could not updated');
   }
 
-  async deleteRoom(id: string) {
-    const deletedRoom = await this.roomModel.findByIdAndDelete(id);
+  async deleteRoom(link: string) {
+    const deletedRoom = await this.roomModel.delete(link);
     if (deletedRoom) {
-      delete deletedRoom.passcode;
       return deletedRoom;
     }
     throw new NotImplementedException('the room could not deleted');
@@ -195,7 +103,6 @@ export class RoomService {
       if (tempUser) {
         room.participants.push(tempUser);
         room.save();
-        delete room.passcode;
         return room;
       }
       throw new NotImplementedException('could not attend to this room');
@@ -205,7 +112,6 @@ export class RoomService {
         const user = await this.userService.getUserById(currentUserId);
         room.participants.push(user);
         room.save();
-        delete room.passcode;
         return room;
       }
       throw new NotFoundException('cannot found such a room');
@@ -224,7 +130,6 @@ export class RoomService {
           (participant) => (participant._id as string) !== tempUserId,
         );
         room.save();
-        delete room.passcode;
         return room;
       }
       throw new InternalServerErrorException(
@@ -240,7 +145,6 @@ export class RoomService {
         (participant) => (participant._id as string) !== currentUserId,
       );
       room.save();
-      delete room.passcode;
       return room;
     }
   }

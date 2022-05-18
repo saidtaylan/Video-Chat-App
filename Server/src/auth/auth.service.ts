@@ -9,11 +9,11 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/user/models/user.model';
+import { User } from 'src/user/entities/user.interface';
 import { UserService } from 'src/user/user.service';
 import { Model } from 'mongoose';
 import { sendMail } from 'src/helpers/sendMail';
-import { ConfirmToken } from './models/accountConfirmToken.model';
+import { ConfirmToken } from './entities/accountConfirmToken.interface';
 
 @Injectable()
 export class AuthService {
@@ -39,8 +39,8 @@ export class AuthService {
 
   async isAlreadyExist(email: string): Promise<boolean> {
     const user = await this.userService.getUser({ email });
-    if (user.length > 0) return true;
-    return false;
+    if(user) return true
+    return false
   }
 
   async validateUser(email: string, password: string) {

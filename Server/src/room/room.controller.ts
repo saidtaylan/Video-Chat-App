@@ -65,7 +65,7 @@ export class RoomController {
 
   @UseGuards(OptionalJWTGuard)
   @Get('attend/:link')
-  async attend(
+  async join(
     @Param('link') link: string,
     @Query('display-name') displayName: string,
     @Req() req: Partial<{ user: Partial<{ userId: string }> }>,
@@ -81,7 +81,7 @@ export class RoomController {
     }
   }
 
-  @Post('leave/:link')
+  @Get('leave/:link')
   async leave(
     @Param('link') link: string,
     @Req() req: Partial<{ user: Partial<{ userId: string }> }>,

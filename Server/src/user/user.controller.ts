@@ -3,7 +3,6 @@ import {
   Get,
   UseGuards,
   Param,
-  ParseIntPipe,
   HttpException,
   HttpStatus,
   Body,
@@ -12,6 +11,7 @@ import {
   Delete,
   ValidationPipe,
   Req,
+  Query
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { CreateTempUserDto } from './dto/create-temp-user.dto';
@@ -22,18 +22,22 @@ import { UserService } from './user.service';
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-  @UseGuards(JwtAuthGuard)
   @Get()
-  getAll() {
-    return this.userService.getUsers();
+  async getAll() {
+    return await this.userService.getUsers({});
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getOne(@Param('id') id: string) {
+  async getbyId(@Param('id') id: string) {
     const user = await this.userService.getUserById(id);
     if (user) return user;
     throw new HttpException('user not found', HttpStatus.NOT_FOUND);
+  }
+
+  @Get('/get')
+  async get(@Query() query: {age?: number, role?: string, name?: string}) {
+    return await this.userService.getUsers(query)
+
   }
 
   @Post()
@@ -46,7 +50,6 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(
     @Param('id') id: string,
@@ -61,7 +64,6 @@ export class UserController {
     throw new HttpException('User not updated', HttpStatus.NOT_MODIFIED);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async delete(@Param('id') id: string) {
     const deletedUser = await this.userService.deleteUser(id);

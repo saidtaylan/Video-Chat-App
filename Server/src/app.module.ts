@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { RoomModule } from './room/room.module';
+import { WsModule } from './ws/ws.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { RoomModule } from './room/room.module';
     MongooseModule.forRoot(process.env.DATABASE_URL),
     AuthModule,
     RoomModule,
+    WsModule,
   ],
 })
 export class AppModule {}

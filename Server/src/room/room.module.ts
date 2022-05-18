@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { MongooseModule } from '@nestjs/mongoose';
-import { RoomSchema } from './models/room.schema';
+import { RoomSchema } from './entities/room.schema';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { RoomController } from './room.controller';
-import { RoomGateway } from './room.gateway';
+import {RoomModel} from "src/room/room.model"
 
 @Module({
-  providers: [RoomService, RoomGateway],
+  providers: [RoomService, RoomModel],
   imports: [
     UserModule,
     AuthModule,

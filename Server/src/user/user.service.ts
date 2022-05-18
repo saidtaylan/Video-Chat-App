@@ -4,62 +4,46 @@ import {
   Injectable,
   UseGuards,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { User } from './models/user.model';
-import { Model } from 'mongoose';
+import { User } from './entities/user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from 'src/auth/auth.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { TempUser } from './models/tempUser.model';
 import { CreateTempUserDto } from './dto/create-temp-user.dto';
+import { UserModel } from './user.model';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel('user') private readonly UserModel: Model<User>,
-    @InjectModel('temp-user') private TempUserModel: Model<TempUser>,
-    private authService: AuthService,
-  ) {}
+  constructor(private authService: AuthService, private userModel: UserModel) {}
 
-  async getUsers() {
-    const users = await this.UserModel.find().lean();
-    const resp = users.map((user) => {
-      return {
-        name: user.name,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        profile_image: user.profileImage,
-        age: user.age,
-      };
-    });
-    return resp;
-  }
-
-  async getUserById(id: string) {
-    const user = await this.UserModel.findById(id);
-    if (!user) return undefined;
+  async getUser(payload: Object) {
+    const user = await this.userModel.findOne(payload);
+    if (!user)
+      throw new HttpException(
+        'could not find such a user',
+        HttpStatus.NOT_FOUND,
+      );
     delete user.password;
     return user;
   }
 
-  async getUser(payload: Object) {
-    const users = await this.UserModel.find(payload).lean();
-    if (users) {
+  async getUserById(id: string) {
+    const user = await this.userModel.findById(id);
+    if (!user)
+      throw new HttpException('cannot find such a user', HttpStatus.NOT_FOUND);
+    delete user.password;
+    return user;
+  }
+
+  async getUsers(payload: Object) {
+    const users = await this.userModel.findMany(payload);
+    if (users.length > 0) {
       const resp = users.map((user) => {
-        return {
-          name: user.name,
-          lastName: user.lastName,
-          email: user.email,
-          role: user.role,
-          profile_image: user.profileImage,
-          age: user.age,
-        };
+        delete user.password;
+        return user;
       });
       return resp;
     }
-    return undefined;
+    throw new HttpException('cannot find any user', HttpStatus.NOT_FOUND);
   }
 
   async createUser(createUserInput: CreateUserDto) {
@@ -71,50 +55,59 @@ export class UserService {
         'such a user already exist',
         HttpStatus.NOT_IMPLEMENTED,
       );
-    const { password } = createUserInput;
-    createUserInput.password = await this.authService.hashPassword(password);
-    const newUser: User = await new this.UserModel(createUserInput).save();
+    const newUser: User = await this.userModel.insert(createUserInput);
     this.authService.sendConfirmEmail(createUserInput.email, newUser._id);
-    if (!newUser) return undefined;
-    delete newUser.password;
+    if (!newUser)
+      throw new HttpException(
+        'user cannot created',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    return newUser;
   }
 
   async updateUser(id: string, updateInput: UpdateUserDto) {
-    if (updateInput?.password) {
-      const { password } = updateInput;
-      updateInput.password = await this.authService.hashPassword(password);
-    }
-    const updatedUser: User = await this.UserModel.findByIdAndUpdate(
-      id,
-      updateInput,
-      { new: true },
-    ).lean();
-    if (!updatedUser) return undefined;
-    delete updatedUser.password;
+    const updatedUser: User = await this.userModel.update(id, updateInput);
+    if (!updatedUser)
+      throw new HttpException(
+        'the user could not create',
+        HttpStatus.NOT_MODIFIED,
+      );
     return updatedUser;
   }
 
   async deleteUser(id: string) {
-    const deletedUser: User = await this.UserModel.findByIdAndDelete(id);
-    if (!deletedUser) return undefined;
+    const deletedUser: User = await this.userModel.delete(id);
+    if (!deletedUser)
+      throw new HttpException(
+        'the user could not create',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
     return deletedUser;
   }
 
   async createTempUser(createTempUserInput: CreateTempUserDto) {
-    const user = await new this.TempUserModel(createTempUserInput).save();
+    const user = await this.userModel.insertTemp(
+      createTempUserInput.displayName,
+    );
     if (user) return user;
-    return undefined;
+    throw new HttpException(
+      'an error occured when join the room',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 
   async deleteTempUser(id: string) {
-    const deletedUser = await this.TempUserModel.findByIdAndDelete(id);
+    const deletedUser = await this.userModel.deleteTemp(id);
     if (deletedUser) return deletedUser;
-    return undefined;
+    throw new HttpException(
+      'an error occured when leave the room',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 
   async getTemp(id: string) {
-    const user = await this.TempUserModel.findById(id)
-    if(user) return user
-    return undefined
+    const user = await this.userModel.findTemp(id);
+    if (user) return user;
+    throw new HttpException('could not such a user', HttpStatus.NOT_FOUND);
   }
 }
