@@ -1,34 +1,67 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody } from '@nestjs/websockets';
-import { WsService } from './ws.service';
-import { CreateWDto } from './dto/create-w.dto';
-import { UpdateWDto } from './dto/update-w.dto';
+import {ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer} from '@nestjs/websockets';
+import {WsService} from './ws.service';
+import {Server, Socket} from "socket.io"
 
-@WebSocketGateway()
+
+@WebSocketGateway({
+    extraHeaders: {},
+    cors: {
+        origin: '*',
+    }
+})
 export class WsGateway {
-  constructor(private readonly wsService: WsService) {}
+    constructor(private readonly wsService: WsService) {
+    }
 
-  @SubscribeMessage('createW')
-  create(@MessageBody() createWDto: CreateWDto) {
-    return this.wsService.create(createWDto);
-  }
+    @WebSocketServer()
+    server: Server;
 
-  @SubscribeMessage('findAllWs')
-  findAll() {
-    return this.wsService.findAll();
-  }
+    @SubscribeMessage('like')
+    like(@MessageBody() body: { room: string, userOnlineId: string, fromOnlineId: string }, @ConnectedSocket() socket: Socket) {
+        this.wsService.like(body);
+        socket.emit("liked", body)
+        socket.to(body.room).emit('liked', body)
+    }
 
-  @SubscribeMessage('findOneW')
-  findOne(@MessageBody() id: number) {
-    return this.wsService.findOne(id);
-  }
+    @SubscribeMessage('likeBack')
+    likeBack(@MessageBody() body: { room: string, userOnlineId: string, fromOnlineId: string }, @ConnectedSocket() socket: Socket) {
+        this.wsService.likeBack(body)
+        socket.to(body.room).emit('likedBack', body)
+    }
 
-  @SubscribeMessage('updateW')
-  update(@MessageBody() updateWDto: UpdateWDto) {
-    return this.wsService.update(updateWDto.id, updateWDto);
-  }
+    @SubscribeMessage('getRoomLikes')
+    getRoomLikes(@MessageBody() room: string, @ConnectedSocket() socket: Socket) {
+        const likesOfRoom = this.wsService.getLikesOfRoom(room)
+        socket.to(room).emit('roomLikes', likesOfRoom)
+    }
 
-  @SubscribeMessage('removeW')
-  remove(@MessageBody() id: number) {
-    return this.wsService.remove(id);
-  }
+    @SubscribeMessage('joinRoom')
+    async joinRoom(@MessageBody() body: { room: string, userId?: string, displayName?: string }, @ConnectedSocket() socket: Socket) {
+        if (body.userId && !body.displayName) {
+            await this.wsService.attendToRoom(socket, body.room, body.userId)
+        } else if (body.displayName && !body.userId) {
+            await this.wsService.attendToRoom(socket, body.room, undefined, body.displayName)
+        }
+    }
+
+    @SubscribeMessage('leaveRoom')
+    async leaveRoom(@MessageBody() body: { room: string, userOnlineId: string}, @ConnectedSocket() socket: Socket) {
+            await this.wsService.leaveRoom(socket, body.room, body.userOnlineId)
+    }
+
+    @SubscribeMessage('addPoint')
+    async addPoint(@MessageBody() body: { user: string, room: string, point: number }, @ConnectedSocket() socket: Socket) {
+        await this.wsService.addPoint(socket, body)
+    }
+
+    @SubscribeMessage('subPoint')
+    async subPoint(@MessageBody() body: { user: string, room: string, point: number }, @ConnectedSocket() socket: Socket) {
+        await this.wsService.subPoint(socket, body)
+    }
+
+    @SubscribeMessage('closeRoom')
+    async closeRoom(@MessageBody() body: { room: string }, @ConnectedSocket() socket: Socket) {
+        await this.wsService.closeRoom(socket, body.room)
+    }
+
 }

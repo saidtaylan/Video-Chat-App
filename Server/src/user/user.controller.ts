@@ -1,96 +1,90 @@
 import {
-  Controller,
-  Get,
-  UseGuards,
-  Param,
-  HttpException,
-  HttpStatus,
-  Body,
-  Post,
-  Put,
-  Delete,
-  ValidationPipe,
-  Req,
-  Query
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpException,
+    HttpStatus,
+    Param,
+    Post,
+    Put,
+    Query,
+    Req, UseGuards,
+    ValidationPipe
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { CreateTempUserDto } from './dto/create-temp-user.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserService } from './user.service';
+import {CreateUserDto} from './dto/create-user.dto';
+import {UpdateUserDto} from './dto/update-user.dto';
+import {UserService} from './user.service';
+import {LoginDto} from "./dto/login.dto";
+import {JwtAuthGuard} from "../auth/guards/jwt.guard";
+import {OptionalJWTGuard} from "../auth/guards/optional-jwt.guard";
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
-  @Get()
-  async getAll() {
-    return await this.userService.getUsers({});
-  }
-
-  @Get(':id')
-  async getbyId(@Param('id') id: string) {
-    const user = await this.userService.getUserById(id);
-    if (user) return user;
-    throw new HttpException('user not found', HttpStatus.NOT_FOUND);
-  }
-
-  @Get('/get')
-  async get(@Query() query: {age?: number, role?: string, name?: string}) {
-    return await this.userService.getUsers(query)
-
-  }
-
-  @Post()
-  async create(@Body('body', new ValidationPipe()) body: CreateUserDto) {
-    const user = await this.userService.createUser(body);
-    if (user) return user;
-    throw new HttpException(
-      'user could not created',
-      HttpStatus.NOT_IMPLEMENTED,
-    );
-  }
-
-  @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body('body', new ValidationPipe()) body: UpdateUserDto,
-    @Req()
-    req: Partial<{ user: { userId: string; email: string; role: string } }>,
-  ) {
-    const user = await this.userService.updateUser(id, body);
-    if (user) {
-      return user;
+    constructor(private readonly userService: UserService) {
     }
-    throw new HttpException('User not updated', HttpStatus.NOT_MODIFIED);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Get()
+    async getAll() {
+        return await this.userService.getUsers({});
+    }
 
-  @Delete(':id')
-  async delete(@Param('id') id: string) {
-    const deletedUser = await this.userService.deleteUser(id);
-    if (deletedUser) return deletedUser;
-    throw new HttpException(
-      'user could not deleted',
-      HttpStatus.NOT_IMPLEMENTED,
-    );
-  }
+    @UseGuards(JwtAuthGuard)
+    @Get(':id')
+    async getById(@Param('id') id: string) {
+        const user = await this.userService.getUserById(id);
+        if (user) return user;
+        throw new HttpException('user not found', HttpStatus.NOT_FOUND);
+    }
 
-  @Post('temp')
-  async createTemp(@Body() body: CreateTempUserDto) {
-    const user = await this.userService.createTempUser(body);
-    if (user) return user;
-    throw new HttpException(
-      'Internal Server Error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
-  }
+    // get users by query parameters as age or role or name(fullName)
+    @UseGuards(JwtAuthGuard)
+    @Get('get')
+    async get(@Query() query: { age?: number, role?: string, name?: string }) {
+        return await this.userService.getUsers(query)
+    }
 
-  @Delete('temp/:id')
-  async deleteTemp(@Param('id') id: string) {
-    const deletedUser = await this.userService.deleteTempUser(id);
-    if (deletedUser) return deletedUser;
-    throw new HttpException(
-      'Inernal Server Error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
-  }
+    @Post('login')
+    async login(
+        @Body() body: LoginDto) {
+        return await this.userService.login(body.email, body.password);
+    }
+
+    @Post("register")
+    async create(@Body(new ValidationPipe()) body: CreateUserDto) {
+        const user = await this.userService.createUser(body);
+        if (user) return user;
+        throw new HttpException(
+            'user could not created',
+            HttpStatus.NOT_IMPLEMENTED,
+        );
+    }
+
+    //@UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
+    @Put(':id')
+    async update(
+        @Param('id') id: string,
+        @Body('body', new ValidationPipe()) body: UpdateUserDto,
+        @Req()
+            req: Partial<{ user: { userId: string; email: string; role: string } }>,
+    ) {
+        const user = await this.userService.updateUser(id, body);
+        if (user) {
+            return user;
+        }
+        throw new HttpException('User not updated', HttpStatus.NOT_MODIFIED);
+    }
+
+    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    async delete(@Param('id') id: string) {
+        const deletedUser = await this.userService.deleteUser(id);
+        if (deletedUser) return deletedUser;
+        throw new HttpException(
+            'user could not deleted',
+            HttpStatus.NOT_IMPLEMENTED,
+        );
+    }
 }

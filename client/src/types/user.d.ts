@@ -1,20 +1,26 @@
 interface IUser {
+
+    onlineId: string,
     name: string
 
     lastName: string
-  
-    email: string
-  
+
+    email?: string
+
     profileImage: string
-  
-    age: number
-  
+
     role: string
-  
+
+    likes: Array<IUser | ITempUser>
+
     score?: {
-      point: number
-      date: Date
+        point: number
+        date: Date
     }
 
-    _id: any
+    totalRoomScore?: number
+
+    accessToken: string
+
+    _id: string
 }

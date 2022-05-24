@@ -1,41 +1,37 @@
 import mongoose from 'mongoose';
+
 export const RoomSchema = new mongoose.Schema(
-  {
-    //name: String,
+    {
+        link: String,
 
-    link: String,
+        passcode: String,
 
-    passcode: String,
+        type: {
+            type: String,
+            default: 'normal',
+            enum: ['edu', 'normal']
+        },
 
-    // edu or normal
-    type: {
-      type: String,
-      default: 'NORMAL',
-      enum: ['EDU', 'NORMAL']
+        owner: {
+            type: mongoose.Types.ObjectId,
+            ref: 'user'
+        },
+
+        image: {
+            type: String,
+            default: 'src/room/images/default.png'
+        },
+
+
+        members: [{type: mongoose.Types.ObjectId, ref: 'user'}],
+
+        deleted_at: {
+            type: Date,
+            required: false
+        }
     },
-
-    //image: String,
-
-    owner: {
-      type: mongoose.Types.ObjectId,
-      ref: 'user'
+    {
+        timestamps: true,
+        versionKey: false,
     },
-
-    // temporary or permanent room
-    permanent: Boolean,
-
-    hosts: [{type: mongoose.Types.ObjectId, ref: 'temp-user'}],
-
-    // if participants is empty, room is temporary
-    participants: [{type: mongoose.Types.ObjectId, ref:'temp-user'}, { type: mongoose.Types.ObjectId, ref: 'user'}],
-
-    deleted_at: {
-      type: Date,
-      required: false
-    }
-  },
-  {
-    timestamps: true,
-    versionKey: false,
-  },
 );

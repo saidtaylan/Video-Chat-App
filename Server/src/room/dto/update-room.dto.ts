@@ -1,4 +1,4 @@
-import { IsAlpha, IsBoolean, IsLowercase, IsString, Length } from "class-validator";
+import {IsAlpha, IsBoolean, IsLowercase, IsString, Length} from "class-validator";
 
 export class UpdateRoomDto {
     @IsString()
@@ -11,7 +11,7 @@ export class UpdateRoomDto {
     @IsString()
     @IsAlpha()
     @IsLowercase()
-    // edu or normal
+        // edu or normal
     type?: string
 
     @IsString()

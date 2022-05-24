@@ -1,4 +1,5 @@
 interface ITempUser {
-  displayName: string;
-  _id: any;
+    onlineId: string
+    displayName: string;
+    likes: Array<ITempUser | IUser>
 }

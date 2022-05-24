@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "ion-sdk-js": "^1.8.2",
-    "pinia": "^2.0.13",
+    "pinia": "^2.0.14",
+    "socket.io-client": "^4.5.1",
     "vue": "^3.2.33",
     "vue-router": "^4.0.14",
     "vuesax": "^4.0.1-alpha.25"

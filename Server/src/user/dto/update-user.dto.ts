@@ -1,22 +1,28 @@
-import { IsAlpha, IsEmail, IsString, Length } from 'class-validator';
+import {IsAlpha, IsString, Length} from 'class-validator';
+
 export class UpdateUserDto {
-  @IsAlpha()
-  name?: string;
+    @IsAlpha()
+    name?: string;
 
-  @IsAlpha()
-  lastName?: string;
+    @IsAlpha()
+    lastName?: string;
 
-  @Length(8, 20)
-  @IsString()
-  password?: string;
+    @Length(8, 20)
+    @IsString()
+    password?: string;
 
-  @IsString()
-  profileImage?: string;
+    @IsString()
+    profileImage?: string;
 
-  age?: number;
+    status?: string
 
-  status?: string
+    @IsAlpha()
+    role?: string;
 
-  @IsAlpha()
-  role?: string;
+    point?: {
+        user: string,
+        room: string,
+        point: number
+        date: Date
+    }
 }

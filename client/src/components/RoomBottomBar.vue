@@ -5,13 +5,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import {onMounted} from "vue";
 
-onMounted(() => {});
+onMounted(() => {
+});
 
-const leave = () => {};
+const leave = () => {
+};
 
-const cameraOnOff = () => {};
+const cameraOnOff = () => {
+};
 
-const micOnOff = () => {};
+const micOnOff = () => {
+};
 </script>

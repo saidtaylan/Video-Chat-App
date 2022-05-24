@@ -1,14 +1,17 @@
 interface IRoom {
-  link: string;
+    link: string;
 
-  passcode: string;
+    passcode: string;
 
-  type: string;
+    type: string;
 
-  permanent: boolean;
+    owner: IUser | ITempUser
 
-  hosts: [IUser];
+    permanent: boolean;
 
-  participants: [IUser | ITempUser];
-  _id: any;
+    hosts: [IUser];
+
+    participants: [IUser | ITempUser];
+
+    _id: string;
 }
