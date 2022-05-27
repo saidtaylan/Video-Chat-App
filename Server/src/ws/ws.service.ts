@@ -28,44 +28,34 @@ export class WsService {
         return this.roomService.getLikesOfRoom(room)
     }
 
-    async attendToRoom(
+    async joinRoom(
         socket: Socket,
         link: string,
         userOnlineId: string,
         displayName?: string,
     ) {
         const room: LeanDocument<Room> | TempRoom = this.roomService.findActive(link);
+        const user = await this.userService.getOnline(userOnlineId) as LeanDocument<User>
         if (room) {
-            if (displayName) {
+            if ("displayName" in user) {
                 if (room && "members" in room) {
                     return socket.emit("error", <IError>{
                         type: 'JoinError', message: 'You cannot join a permanent room if you are not a registered user'
                     })
                 }
-                const tempUser = await this.userService.createTemp(displayName) as TempUser;
-                if (tempUser) {
-                    this.roomService.addParticipant(room.link, tempUser)
-                    socket.join(room.link)
-                    return socket.to(link).emit("SomeoneJoined", <{ user: TempUser, room: Room }>{
-                        user: tempUser, room
-                    });
-                }
-                socket.emit("error", {type: "RoomCreateError", message: "an error occurred while creating a room"})
-            } else {
-                const user = await this.userService.getOnline(userOnlineId) as LeanDocument<User>
-                if (user) {
-                    this.roomService.addParticipant(room.link, user)
-                    socket.join(link)
-                    const roomScores = user.score.points.filter(point => point.room === link)
-                    const totalRoomScore = roomScores.reduce((acc, cur) => {
-                        return acc + cur.point
-                    }, 0)
-                    return socket.to(link).emit("SomeoneJoined", <{ user: User & { totalRoomScore }, room: Room }>{
-                        user: {...user, totalRoomScore}, room
-                    });
-                }
-                return socket.emit("error", {type: 'RoomCreateError', message: 'The user not found in online ones'})
+                this.roomService.addParticipant(room.link, user)
+                socket.join(room.link)
+                return socket.in(room.link).emit("SomeoneJoined", {
+                    user, room
+                });
             }
+            const roomScores = user.score.points.filter(point => point.room === link)
+            const totalRoomScore = roomScores.reduce((acc, cur) => {
+                return acc + cur.point
+            }, 0)
+            return socket.to(room.link).emit("SomeoneJoined", {
+                user: {...user, totalRoomScore}, room
+            });
         }
         return socket.emit('error', <IError>{type: 'NotFoundRoom', message: 'cannot found such a room'})
     }
@@ -120,5 +110,9 @@ export class WsService {
             socket.to(link).socketsLeave(Array.from(allSockets))
         }
 
+    }
+
+    disconnect(onlineId: string) {
+        this.userService.removeFromOnline(onlineId)
     }
 }

@@ -1,27 +1,31 @@
 import {IsAlpha, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString,} from 'class-validator';
 
 export class CreateUserDto {
-    @IsString()
     @IsNotEmpty()
+    @IsString()
+    onlineId: string
+
+    @IsNotEmpty()
+    @IsString()
     name: string;
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     lastName: string;
 
-    @IsEmail()
     @IsNotEmpty()
+    @IsEmail()
     email: string;
 
-    @IsString()
     @IsNotEmpty()
+    @IsString()
     password: string;
 
-    @IsString()
     @IsOptional()
+    @IsString()
     profileImage: string;
 
-    @IsAlpha()
     @IsOptional()
+    @IsAlpha()
     role: string;
 }

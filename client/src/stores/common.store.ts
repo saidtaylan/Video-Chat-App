@@ -7,11 +7,11 @@ export const useCommonStore = defineStore({
         errors: <Partial<Record<string, string>>>{},
     }),
     getters: {
-        getErrors() {
+        getErrors(state: any) {
             return this.errors
         },
-        getErrorByType(errorType: string) {
-            return this.errors[errorType]
+        getErrorByType(state: any) {
+            return (errorType: string) => state.errors[errorType]
         },
     },
     actions: {
@@ -19,7 +19,7 @@ export const useCommonStore = defineStore({
             this.errors[error.type] = error.message
         },
         deleteError(errorType: string) {
-            delete this.errors[error.type]
+            delete this.errors[errorType]
         },
         clearErrors() {
             this.errors = []
@@ -27,7 +27,7 @@ export const useCommonStore = defineStore({
 
         commonSocketListeners() {
             socket.on("error", (error: { type: string, message: string }) => {
-                addError(error)
+                this.addError(error)
                 // tiplere göre swwitch case yap
             })
         }

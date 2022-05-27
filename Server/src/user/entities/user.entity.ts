@@ -1,9 +1,9 @@
 import {Document} from 'mongoose';
 
 export interface User extends Document {
-    onlineId: string
-
     name: string
+
+    onlineId: string
 
     lastName: string
 

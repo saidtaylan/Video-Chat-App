@@ -3,40 +3,49 @@ import {MainServerAxios as axios} from "@/utils/appAxios";
 import router from "../router/index"
 
 const baseUrl = import.meta.env.VITE_BASE_URL
+const serverUrl = import.meta.env.VITE_SERVER_URL
 
 export const useUserStore = defineStore({
     id: 'user',
     state: () => ({
-        user: <IUser | ITempUser>{
-
-        },
+        user: <IUser | ITempUser>{},
     }),
     getters: {
-        getUser: (state) => {
+        getUser: (state: any) => {
             return state.user
         },
-/*        getUserProperty: (state:any) => {
-            return (property: string) => state.user[property]
-}*/
+        /*        getUserProperty: (state:any) => {
+                    return (property: string) => state.user[property]
+        }*/
     },
     actions: {
         setUser(user: IUser | ITempUser) {
             this.user = user;
         },
 
-        async fetchUser(id: string, userToken: string) {
-            const user = await axios.get(
-                `${baseUrl}/users`,
-                {headers: {Authorization: `Bearer ${userToken}`}}
-            );
-            console.log("user :>> ", user);
-            return user;
+        setDisplayName(displayName: string) {
+            const user: ITempUser = this.user as ITempUser
+            user.displayName = displayName;
         },
+
+        async enterSite() {
+            const resp = await axios.get(`${serverUrl}/enter-site`)
+            this.setUser(<ITempUser>resp.data)
+        },
+
+        async fetchUser(id: string) {
+            const resp = await axios.get(
+                `${serverUrl}/users/${id}`,
+                {headers: {Authorization: `Bearer ${this.getUser.accessToken}`}}
+            );
+            return resp.data;
+        },
+
 
         async login(body: { email: string, password: string }) {
             try {
                 // this returns user data
-                const resp = await axios.post(`${baseUrl}/users/login`, body)
+                const resp = await axios.post(`${serverUrl}/users/login`, {...body, onlineId: this.getUser.onlineId})
                 if (resp.data) {
                     this.setUser(resp.data)
                     await router.replace({name: 'home'})
@@ -49,7 +58,7 @@ export const useUserStore = defineStore({
 
         async register(body: { name: string, lastName: string, email: string, password: string, role: string }) {
             try {
-                const resp = await axios.post(`${baseUrl}/users/register`, body)
+                const resp = await axios.post(`${serverUrl}/users/register`, {...body, onlineId: this.getUser.onlineId})
                 if (resp.data) {
                     this.setUser(resp.data)
                     await router.replace({name: 'home'})

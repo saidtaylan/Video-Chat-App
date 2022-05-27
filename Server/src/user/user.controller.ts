@@ -23,6 +23,7 @@ import {OptionalJWTGuard} from "../auth/guards/optional-jwt.guard";
 export class UserController {
     constructor(private readonly userService: UserService) {
     }
+
     @UseGuards(JwtAuthGuard)
     @Get()
     async getAll() {
@@ -47,7 +48,7 @@ export class UserController {
     @Post('login')
     async login(
         @Body() body: LoginDto) {
-        return await this.userService.login(body.email, body.password);
+        return await this.userService.login(body);
     }
 
     @Post("register")

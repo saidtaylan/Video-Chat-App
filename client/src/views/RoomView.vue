@@ -1,10 +1,8 @@
 <template>
-  <Attendees/>
-  asdasd
-
-  <RoomBottomBar/>
+  <Room></Room>
 </template>
 
-<script setup></script>
+<script setup>
+import Room from "@/components/Room.vue"
+</script>
 
-<script setup></script>

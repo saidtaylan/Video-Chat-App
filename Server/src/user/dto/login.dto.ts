@@ -2,6 +2,10 @@ import {IsEmail, IsNotEmpty, IsString, Length} from "class-validator"
 
 export class LoginDto {
     @IsNotEmpty()
+    @IsString()
+    onlineId: string
+
+    @IsNotEmpty()
     @IsEmail()
     email: string
 

@@ -17,50 +17,36 @@ export class RoomService {
         private readonly userService: UserService,
         private readonly roomModel: RoomModel,
         private authService: AuthService,
-        private readonly userModel: UserModel
-    ) {
+        private readonly userModel: UserModel) {
     }
 
     // Actives: roomLink, Room | TempRoom
-    activeRooms: { permanent: Record<string, LeanDocument<Room> | TempRoom>, temporary: Record<string, LeanDocument<Room> | TempRoom> } = {
+    public activeRooms: { permanent: Record<string, LeanDocument<Room> | TempRoom>, temporary: Record<string, LeanDocument<Room> | TempRoom> } = {
         permanent: {},
         temporary: {}
     }
 
-    create(userOnlineId?: string, displayName?: string) {
-        if (userOnlineId) {
-            const user = this.userService.getOnline(userOnlineId)
-            if (user) {
-                const link = nanoid(25);
-                const passcodeOriginal = nanoid(8);
-                const passcode = this.authService.encrypt({passcodeOriginal});
-
-                const newTempRoom: TempRoom = {
-                    link,
-                    owner: user,
-                    passcode,
-                    participants: [],
-                    type: 'normal'
-                }
-                this.addActive(newTempRoom, false)
-                this.addParticipant(link, user)
-                return newTempRoom
+    create(userOnlineId: string, displayName?: string) {
+        let user: LeanDocument<User> | TempUser
+        user = this.userService.getOnline(userOnlineId)
+        if (user) {
+            const link = nanoid(25);
+            const passcodeOriginal = nanoid(8);
+            let room: LeanDocument<Room> | TempRoom;
+            const passcode = this.authService.encrypt({passcodeOriginal});
+            if (displayName) {
+                this.userService.updateOnline({...user, displayName}, userOnlineId)
             }
+            room = {
+                link,
+                owner: user,
+                passcode,
+                participants: [],
+                type: 'normal'
+            } as TempRoom
+            this.addActive(room, false)
+            return room
         }
-        const newTempUser: TempUser = this.userService.createTemp(displayName)
-        const link = nanoid(25);
-        const passcodeOriginal = nanoid(8);
-        const passcode = this.authService.encrypt({passcodeOriginal});
-        const newTempRoom: TempRoom = {
-            link,
-            owner: newTempUser,
-            passcode,
-            participants: [],
-            type: 'normal'
-        }
-        this.addActive(newTempRoom, false)
-        this.addParticipant(link, newTempUser)
-        return newTempRoom
     }
 
 
@@ -115,21 +101,21 @@ export class RoomService {
         throw new NotImplementedException('the room could not deleted');
     }
 
-    async isActive(link: string) {
-        let isActive: boolean;
-        if (link in this.activeRooms.temporary) return isActive = !!this.activeRooms.temporary[link]
-        else if (link in this.activeRooms.permanent) return isActive = !!this.activeRooms.permanent[link]
+    isActive(link: string) {
+        if (link in this.activeRooms.temporary) return true
+        else if (link in this.activeRooms.permanent) return true
+        return false
     }
 
     getActives(temporary?: boolean) {
-        if (temporary === undefined) return this.activeRooms
-        else if (temporary === true) return this.activeRooms.temporary
+        if (temporary === true) return this.activeRooms.temporary
         else if (temporary === false) return this.activeRooms.permanent
+        else if (temporary == undefined) return this.activeRooms
     }
 
     findActive(link: string) {
-        if (this.isOnlineRoomPermanent(link)) return this.activeRooms.temporary[link]
-        return this.activeRooms.permanent[link]
+        if(this.isOnlineRoomPermanent(link)) return this.activeRooms.permanent[link]
+        else return this.activeRooms.temporary[link]
     }
 
     addActive(room: LeanDocument<Room> | TempRoom, permanent: boolean) {
@@ -142,7 +128,7 @@ export class RoomService {
         return delete this.activeRooms.permanent[link]
     }
 
-    updateActive(link: string, room: LeanDocument<Room> | TempRoom, permanent: boolean) {
+    updateActive(link: string, room: LeanDocument<Room> | TempRoom) {
         if (this.isOnlineRoomPermanent(link)) return this.activeRooms.permanent[link] = room
         return this.activeRooms.temporary[link] = room
     }
@@ -152,10 +138,13 @@ export class RoomService {
         return this.activeRooms.temporary[link].participants.push(user)
     }
 
-    isOnlineRoomPermanent(link) {
-        let permanent;
-        if (link in this.activeRooms.permanent) return permanent = !!this.activeRooms.permanent[link]
-        else if (link in this.activeRooms.temporary) return permanent = !!!this.activeRooms.temporary[link]
+    isOnlineRoomPermanent(link: string) {
+        if (link in this.activeRooms.permanent) {
+            return true
+        }
+        else if (link in this.activeRooms.temporary) {
+            return false
+        }
     }
 
     removeParticipant(link: string, userOnlineId: string) {

@@ -12,4 +12,6 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import Attendee from "@/components/Attendee.vue"
+</script>

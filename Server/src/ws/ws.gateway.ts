@@ -36,11 +36,11 @@ export class WsGateway {
     }
 
     @SubscribeMessage('joinRoom')
-    async joinRoom(@MessageBody() body: { room: string, userId?: string, displayName?: string }, @ConnectedSocket() socket: Socket) {
-        if (body.userId && !body.displayName) {
-            await this.wsService.attendToRoom(socket, body.room, body.userId)
-        } else if (body.displayName && !body.userId) {
-            await this.wsService.attendToRoom(socket, body.room, undefined, body.displayName)
+    async joinRoom(@MessageBody() body: { room: string, userOnlineId?: string, displayName?: string }, @ConnectedSocket() socket: Socket) {
+        if (!body.displayName) {
+            await this.wsService.joinRoom(socket, body.room, body.userOnlineId)
+        } else if (body.displayName) {
+            await this.wsService.joinRoom(socket, body.room, body.userOnlineId, body.displayName)
         }
     }
 
@@ -63,5 +63,12 @@ export class WsGateway {
     async closeRoom(@MessageBody() body: { room: string }, @ConnectedSocket() socket: Socket) {
         await this.wsService.closeRoom(socket, body.room)
     }
+
+    @SubscribeMessage('disconnect')
+    async disconnect(@MessageBody() body: {onlineId: string}, @ConnectedSocket() socket: Socket) {
+        this.wsService.disconnect(body.onlineId)
+    }
+
+
 
 }

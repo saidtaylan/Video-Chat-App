@@ -7,6 +7,7 @@ import {UserModel} from './user.model';
 import {TempUser} from "./entities/tempUser.entity";
 import {LeanDocument} from "mongoose"
 import {nanoid} from "nanoid";
+import {create} from "domain";
 
 @Injectable()
 export class UserService {
@@ -15,6 +16,13 @@ export class UserService {
 
     // <onlineId, User | TempUser>
     private onlineUsers: Record<string, TempUser | LeanDocument<User>> = {};
+
+    enterSite() {
+        const onlineId = nanoid()
+        const tempUser: TempUser = {onlineId, displayName: '', likes: []}
+        this.addOnline(tempUser)
+        return tempUser
+    }
 
     async getUser(payload: Object) {
         const user = await this.userModel.findOne(payload);
@@ -46,22 +54,21 @@ export class UserService {
         throw new HttpException('cannot find any user', HttpStatus.NOT_FOUND);
     }
 
-    async login(email: string, password: string) {
-        const user = await this.authService.validateUser(email, password)
+    async login(body: { onlineId: string, email: string, password: string }) {
+        const user = await this.authService.validateUser(body.email, body.password)
         if (user) {
             const leanUser = user.toObject({getters: true});
             delete leanUser.password
-            const onlineId = this.addOnline(leanUser)
+            this.updateOnline(leanUser, body.onlineId)
             const accessToken = this.authService.generateJWT({
                 id: user._id.toHexString(),
                 email: user.email,
                 role: user.role,
-                onlineId
+                onlineId: body.onlineId
             });
             return {
                 ...leanUser,
                 accessToken,
-                onlineId
             }
         }
         throw new NotFoundException('User not found');
@@ -89,7 +96,11 @@ export class UserService {
                 'user could not create',
                 HttpStatus.NOT_IMPLEMENTED,
             );
-        return await this.login(createUserInput.email, createUserInput.password)
+        return await this.login({
+            onlineId: createUserInput.onlineId,
+            email: createUserInput.email,
+            password: createUserInput.password
+        });
     }
 
     async updateUser(id: string, updateInput: UpdateUserDto) {
@@ -114,12 +125,15 @@ export class UserService {
     }
 
     addOnline(user: LeanDocument<User> | TempUser) {
-        const onlineId = nanoid()
-        this.onlineUsers[onlineId] = user
-        return onlineId
+        this.onlineUsers[user.onlineId] = user
+        return user.onlineId
     }
 
-    removeFromOnline(onlineId: string)  {
+    updateOnline(user: LeanDocument<User> | TempUser, onlineId: string) {
+        this.onlineUsers[onlineId] = user
+    }
+
+    removeFromOnline(onlineId: string) {
         const user = this.onlineUsers[onlineId]
         delete this.onlineUsers[onlineId]
         return user
@@ -136,8 +150,9 @@ export class UserService {
     createTemp(displayName: string): TempUser {
         const onlineId = nanoid()
         return <TempUser>{
+            displayName,
             onlineId,
-            displayName
+            likes: [],
         }
     }
 }

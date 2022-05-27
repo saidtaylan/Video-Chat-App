@@ -51,7 +51,7 @@ const logedInUser = computed(() => {
 const displayName = ref('')
 
 const createRoom = async () => {
-  userStore.setUser({displayName: displayName.value, likes: [], onlineId: ''})
+  userStore.setDisplayName(displayName.value)
   await roomStore.createRoom()
   const room = roomStore.getActiveRoom
   await router.push({name: 'room', params: {'link': room.link}})

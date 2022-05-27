@@ -3,9 +3,11 @@ import {useUserStore} from "./user.store";
 import {socket} from "@/utils/socketio";
 import {MainServerAxios as axios} from "../utils/appAxios"
 import type {Socket} from "socket.io-client"
+import {useRouter} from "vue-router"
 
+const serverUrl = import.meta.env.VITE_SERVER_URL
 const baseUrl = import.meta.env.VITE_BASE_URL
-
+const router = useRouter()
 export const useRoomStore = defineStore({
     id: "room",
     state: () => ({
@@ -29,76 +31,65 @@ export const useRoomStore = defineStore({
             this.activeRoom.participants.push(participant)
         },
 
-        deleteParticipant(participantID: string) {
-            this.activeRoom.participants = this.activeRoom.participants.filter(((participant) => participant._id !== participantID)) as any
+        deleteParticipant(onlineId: string) {
+            this.activeRoom.participants = this.activeRoom.participants.filter(((participant) => participant.onlineId !== onlineId)) as any
         },
 
         async createRoom() {
             const userStore = useUserStore()
-            console.log(userStore.getUser)
             if ("displayName" in userStore.getUser) {
                 // resp.data = user data
-                const resp = await axios.get(`${baseUrl}/rooms/create?display-name${userStore.getUser.displayName}`,)
+                const resp = await axios.post(`${serverUrl}/rooms/create?display-name=${userStore.getUser.displayName}`, {onlineId: userStore.getUser.onlineId})
                 if (resp.data) {
-                    this.activeRoom = resp.data
+                    console.log(resp.data)
+                    this.setActiveRoom(resp.data)
+                    await router.push({name: 'room', params: {'link': resp.data.link}})
                 }
             } else if (userStore.getUser._id) {
-                const userToken = userStore.getUser.accessToken
-                const resp = await axios.get(`${baseUrl}/rooms/create`, {headers: {'Authorization': `Bearer ${userToken}`}})
+                const resp = await axios.post(`${serverUrl}/rooms/create`, {onlineI: userStore.getUser.onlineId})
                 if (resp.data) {
                     this.activeRoom = resp.data
                 }
-            }
-            else {
+            } else {
                 throw new Error("Could not send create query")
             }
         },
 
-        // async joinRoom(socket: Socket,
-        //                body: {
-        //                    room: string,
-        //                    tempUserDisplayName?: string
-        //                }
-        // ) {
-        //     const userStore = useUserStore()
-        //     const userToken = userStore.getUser
-        //     if (userToken && !body.tempUserDisplayName) {
-        //         socket.emit("joinRoom", {room: body.room, userToken});
-        //     } else if (body.tempUserDisplayName && !userToken) {
-        //         socket.emit("joinRoom", {room: body.room, tempUserDisplayName: body.tempUserDisplayName});
-        //     }
-        // },
-        //
-        // async leaveRoom(socket: Socket, room: string, tempUserId?: string) {
-        //     const userStore = useUserStore()
-        //     const userToken = userStore.getUser
-        //     if (userToken && !tempUserId) {
-        //         socket.emit("leaveRoom", {room, userId: userToken});
-        //     } else if (tempUserId && !userToken) {
-        //         socket.emit("leaveRoom", {room, tempUserId});
-        //     }
-        // },
+        async joinRoom(room: string) {
+            const userStore = useUserStore()
+            const user = userStore.getUser
+            const onlineId = user.onlineId
+            if ("displayName" in user) {
+                socket.emit("joinRoom", {room, userOnlineId: onlineId, displayName: user.displayName});
+            } else {
+                socket.emit("joinRoom", {room, userOnlineId: onlineId});
+            }
+        },
+
+        async leaveRoom(socket: Socket, room: string, tempUserId?: string) {
+            const userStore = useUserStore()
+        },
 
         roomSocketListeners() {
-            // socket.on("SomeoneJoined", (body: { room: IRoom, user: IUser | ITempUser }) => {
-            //     const userStore = useUserStore()
-            //     if (body.user._id === userStore.getUser?._id) {
-            //         this.setActiveRoom(body.room)
-            //     }
-            //     this.addParticipant(body.user)
-            // });
-            //
-            // socket.on("SomeoneLeft", (user: IUser | ITempUser) => {
-            //     const userStore = useUserStore()
-            //     if (user._id === userStore.getUser?._id) {
-            //         this.resetActiveRoom()
-            //     }
-            //     this.deleteParticipant(user._id)
-            // })
-            //
-            // socket.on("RoomClosed", () => {
-            //     this.resetActiveRoom()
-            // })
+            socket.on("SomeoneJoined", (body: { room: IRoom, user: IUser | ITempUser }) => {
+                const userStore = useUserStore()
+                this.setActiveRoom(body.room)
+            });
+
+            socket.on("SomeoneLeft", (user: IUser | ITempUser) => {
+                console.log(user)
+                const userStore = useUserStore()
+                if (user.onlineId === userStore.getUser.onlineId) {
+                    this.resetActiveRoom()
+                } else {
+                    this.deleteParticipant(user.onlineId)
+                }
+            })
+
+            socket.on("RoomClosed", () => {
+                this.resetActiveRoom()
+
+            })
 
         },
     },

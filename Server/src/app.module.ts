@@ -5,6 +5,7 @@ import {ConfigModule} from '@nestjs/config';
 import {AuthModule} from './auth/auth.module';
 import {RoomModule} from './room/room.module';
 import {WsModule} from './ws/ws.module';
+import { AppController } from './app.controller';
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import {WsModule} from './ws/ws.module';
         RoomModule,
         WsModule,
     ],
+    controllers: [AppController],
 })
 export class AppModule {
 }

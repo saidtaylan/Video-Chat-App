@@ -3,7 +3,9 @@
     <div
         class="flex flex-col lg:flex-row w-full items-start lg:items-center rounded bg-white shadow"
     >
-      <video></video>
+      <video ref="atendeeVideo"></video>
     </div>
   </div>
 </template>
+
+<script setup lang="ts"></script>

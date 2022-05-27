@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     NotFoundException,
-    Param,
+    Param, Post,
     Put,
     Query,
     Req,
@@ -23,16 +23,15 @@ export class RoomController {
     }
 
     @UseGuards(OptionalJWTGuard)
-    @Get('create')
+    @Post('create')
     create(
-        @Body() body: CreateRoomDto,
-        @Req() req: Partial<{ user: { onlineId: string } }>,
+        @Body() body: { onlineId: string},
         @Query('display-name') displayName: string
     ) {
-        if (req.user?.onlineId) {
-            return this.roomService.create(req.user.onlineId);
+        if (!displayName) {
+            return this.roomService.create(body.onlineId);
         } else {
-            return this.roomService.create(undefined, displayName)
+            return this.roomService.create(body.onlineId, displayName)
         }
     }
 
