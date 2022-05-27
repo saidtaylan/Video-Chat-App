@@ -17,11 +17,19 @@ export class UserService {
     // <onlineId, User | TempUser>
     private onlineUsers: Record<string, TempUser | LeanDocument<User>> = {};
 
-    enterSite() {
-        const onlineId = nanoid()
-        const tempUser: TempUser = {onlineId, displayName: '', likes: []}
-        this.addOnline(tempUser)
-        return tempUser
+    async enterSite(userId?: string) {
+        if (!userId) {
+            const onlineId = nanoid()
+            const newTempUser: TempUser = {onlineId, displayName: '', likes: []}
+            this.addOnline(newTempUser)
+            return newTempUser
+        }
+        const userDB: User = await this.userModel.findById(userId)
+        if (userDB) {
+            const leanUser: LeanDocument<User> = userDB.toObject({getters: true})
+            this.addOnline(leanUser)
+            return leanUser
+        }
     }
 
     async getUser(payload: Object) {
@@ -68,6 +76,7 @@ export class UserService {
             });
             return {
                 ...leanUser,
+                onlineId: body.onlineId,
                 accessToken,
             }
         }

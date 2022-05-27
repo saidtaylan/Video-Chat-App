@@ -5,7 +5,9 @@ const userStore = useUserStore()
 const asyncFunc = async () => {
   await userStore.enterSite()
 }
-asyncFunc()
+(async function () {
+  await asyncFunc()
+}())
 </script>
 
 <template>

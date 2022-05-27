@@ -8,4 +8,15 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import {onMounted, ref} from "vue"
+
+const attendeeVideo = ref(null)
+
+const emit = defineEmits(['update:attendeeVideo'])
+
+onMounted(() => {
+emit('update:attendeeVideo', attendeeVideo)
+})
+
+</script>

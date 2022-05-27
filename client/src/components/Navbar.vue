@@ -1,7 +1,7 @@
 <template>
-  <div class="px-4 py-12">
+  <div class="px-4">
     <div
-        class="py-7 bg-gray-50 lg:max-w-[1124px] w-full md:max-w-[696px] max-w-[343px] mx-auto"
+        class="py-5 mx-auto"
     >
       <div
           class="flex flex-col items-start justify-between px-4 lg:items-center lg:px-6 md:px-4 lg:flex-row md:flex-row md:items-center"
@@ -39,9 +39,9 @@ import {useUserStore} from "@/stores/user.store";
 import {computed} from "vue"
 
 const userStore = useUserStore()
+
 const isUserExist = computed(() => {
-  if (userStore.getUser.name) return true
-  return false
+  return !!userStore.getUser.name;
 
 })
 </script>

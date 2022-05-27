@@ -14,16 +14,16 @@ export class UserModel {
     ) {
     }
 
-    findById(id: string) {
-        return this.userEntity.findById(id);
+    async findById(id: string) {
+        return await this.userEntity.findById(id);
     }
 
-    findOne(payload: {}) {
-        return this.userEntity.findOne(payload);
+    async findOne(payload: {}) {
+        return await this.userEntity.findOne(payload);
     }
 
-    findMany(payload: {}) {
-        return this.userEntity.find(payload);
+    async findMany(payload: {}) {
+        return await this.userEntity.find(payload);
     }
 
     async insert(userInput: CreateUserDto) {

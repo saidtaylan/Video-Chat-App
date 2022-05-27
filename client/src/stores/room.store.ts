@@ -3,11 +3,10 @@ import {useUserStore} from "./user.store";
 import {socket} from "@/utils/socketio";
 import {MainServerAxios as axios} from "../utils/appAxios"
 import type {Socket} from "socket.io-client"
-import {useRouter} from "vue-router"
+import router from "@/router/index"
 
 const serverUrl = import.meta.env.VITE_SERVER_URL
 const baseUrl = import.meta.env.VITE_BASE_URL
-const router = useRouter()
 export const useRoomStore = defineStore({
     id: "room",
     state: () => ({
@@ -41,9 +40,8 @@ export const useRoomStore = defineStore({
                 // resp.data = user data
                 const resp = await axios.post(`${serverUrl}/rooms/create?display-name=${userStore.getUser.displayName}`, {onlineId: userStore.getUser.onlineId})
                 if (resp.data) {
-                    console.log(resp.data)
                     this.setActiveRoom(resp.data)
-                    await router.push({name: 'room', params: {'link': resp.data.link}})
+                    await router.push({name: 'room', params: {link: this.activeRoom.link}})
                 }
             } else if (userStore.getUser._id) {
                 const resp = await axios.post(`${serverUrl}/rooms/create`, {onlineI: userStore.getUser.onlineId})
