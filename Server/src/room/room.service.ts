@@ -26,29 +26,26 @@ export class RoomService {
         temporary: {}
     }
 
-    create(userOnlineId: string, displayName?: string) {
+    create(userOnlineId: string) {
         let user: LeanDocument<User> | TempUser
         user = this.userService.getOnline(userOnlineId)
         if (user) {
             const link = nanoid(25);
             const passcodeOriginal = nanoid(8);
-            let room: LeanDocument<Room> | TempRoom;
-            const passcode = this.authService.encrypt({passcodeOriginal});
-            if (displayName) {
-                this.userService.updateOnline({...user, displayName}, userOnlineId)
-            }
-            room = {
+            const passcode = this.authService.encrypt(passcodeOriginal);
+            const room = {
                 link,
-                owner: user,
+                owner: userOnlineId,
                 passcode,
                 participants: [],
                 type: 'normal'
             } as TempRoom
             this.addActive(room, false)
+            room.passcode = this.authService.decrypt(passcode)
             return room
         }
+        throw new NotImplementedException("Room could not create")
     }
-
 
     async get(userId: string, type?: string) {
         if (type) {
@@ -114,13 +111,19 @@ export class RoomService {
     }
 
     findActive(link: string) {
-        if(this.isOnlineRoomPermanent(link)) return this.activeRooms.permanent[link]
-        else return this.activeRooms.temporary[link]
+        if(this.isOnlineRoomPermanent(link)) {
+            return this.activeRooms.permanent[link]
+        }
+        else {
+            return this.activeRooms.temporary[link]
+        }
     }
 
     addActive(room: LeanDocument<Room> | TempRoom, permanent: boolean) {
-        if (permanent) return this.activeRooms.permanent[room.link] = room
-        else this.activeRooms.temporary[room.link] = room
+        if (permanent) this.activeRooms.permanent[room.link] = room
+        else {
+            this.activeRooms.temporary[room.link] = room
+        }
     }
 
     deleteActive(link: string) {
@@ -134,8 +137,12 @@ export class RoomService {
     }
 
     addParticipant(link: string, user: LeanDocument<User> | TempUser) {
-        if (this.isOnlineRoomPermanent(link)) return this.activeRooms.permanent[link].participants.push(user)
-        return this.activeRooms.temporary[link].participants.push(user)
+        if (this.isOnlineRoomPermanent(link)) {
+            this.activeRooms.permanent[link].participants.push(user)
+            return this.activeRooms.permanent[link]
+        }
+        this.activeRooms.temporary[link].participants.push(user)
+        return this.activeRooms.temporary[link]
     }
 
     isOnlineRoomPermanent(link: string) {
@@ -149,17 +156,16 @@ export class RoomService {
 
     removeParticipant(link: string, userOnlineId: string) {
         if (this.isOnlineRoomPermanent(link)) {
-            const user = this.activeRooms.permanent[link]
-            user.participants = user.participants.filter(p => p.onlineId !== userOnlineId)
-            return user
+            const room = this.activeRooms.permanent[link]
+            room.participants = room.participants.filter(p => p.onlineId !== userOnlineId)
+            return room
         }
-        const user = this.activeRooms.temporary[link]
-        user.participants = user.participants.filter(p => p.onlineId !== userOnlineId)
-        return user
+        const room = this.activeRooms.temporary[link]
+        room.participants = room.participants.filter(p => p.onlineId !== userOnlineId)
+        return room
     }
 
     likeUser(body: { room: string, userOnlineId: string, fromOnlineId: string }) {
-        const user = this.get
         if (this.isOnlineRoomPermanent(body.room)) {
             return this.activeRooms.permanent[body.room].participants.forEach(p => {
                 if (p.onlineId === body.userOnlineId) {
@@ -190,5 +196,11 @@ export class RoomService {
             })
         }
         return this.activeRooms.temporary[body.room].participants[body.userOnlineId].likes.filter(l => l !== body.fromOnlineId)
+    }
+
+    changeOwner(body: {room: string, newOwnerOnlineId: string}) {
+        const room = this.findActive(body.room)
+        const user = this.userService.getOnline(body.newOwnerOnlineId)
+        console.log(room.owner)
     }
 }

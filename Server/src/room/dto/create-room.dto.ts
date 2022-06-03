@@ -1,8 +1,6 @@
 import {IsAlpha, IsBoolean, IsNotEmpty, IsOptional, IsString, IsUppercase, MinLength} from "class-validator";
 
 export class CreateRoomDto {
-
-
     onlineId: string
 
     @IsOptional()

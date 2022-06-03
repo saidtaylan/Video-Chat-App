@@ -11,19 +11,33 @@ export const useRoomStore = defineStore({
     id: "room",
     state: () => ({
         activeRoom: <IRoom>{},
-        userRooms: []
+        userRooms: [],
+        userMic: <boolean>true,
+        joinRequestRoom: <IRoom>{},
+        isSpeaking: false
     }),
     getters: {
         getActiveRoom: (state) => state.activeRoom,
-        getParticipants: (state) => state.activeRoom.participants
+        getParticipants: (state) => state.activeRoom.participants,
+        getMicState: (state) => state.userMic,
+        getJoinRequestRoom: (state) => state.joinRequestRoom,
+        getSpeakingStatus: (state) => state.isSpeaking
     },
     actions: {
         setActiveRoom(room: IRoom) {
             this.activeRoom = room;
         },
 
+        setMicState(isOn: true) {
+            this.userMic = isOn
+        },
+
         resetActiveRoom() {
             this.activeRoom = <IRoom>{}
+        },
+
+        setIsSpeakingStatus(status: boolean) {
+            this.isSpeaking = status
         },
 
         addParticipant(participant: IUser | ITempUser) {
@@ -34,26 +48,23 @@ export const useRoomStore = defineStore({
             this.activeRoom.participants = this.activeRoom.participants.filter(((participant) => participant.onlineId !== onlineId)) as any
         },
 
-        async createRoom() {
-            const userStore = useUserStore()
-            if ("displayName" in userStore.getUser) {
-                // resp.data = user data
-                const resp = await axios.post(`${serverUrl}/rooms/create?display-name=${userStore.getUser.displayName}`, {onlineId: userStore.getUser.onlineId})
-                if (resp.data) {
-                    this.setActiveRoom(resp.data)
-                    await router.push({name: 'room', params: {link: this.activeRoom.link}})
-                }
-            } else if (userStore.getUser._id) {
-                const resp = await axios.post(`${serverUrl}/rooms/create`, {onlineI: userStore.getUser.onlineId})
-                if (resp.data) {
-                    this.activeRoom = resp.data
-                }
-            } else {
-                throw new Error("Could not send create query")
-            }
+        async fetchRoom(link: string) {
+            const resp = await axios.get(`${serverUrl}/rooms/active/${link}`)
+            this.joinRequestRoom = resp.data
         },
 
-        async joinRoom(room: string) {
+        async createRoom() {
+            const userStore = useUserStore()
+            const resp = await axios.post(`${serverUrl}/rooms/create`, {onlineId: userStore.getUser.onlineId})
+            if (resp.data) {
+                console.log(resp.data)
+                this.setActiveRoom(resp.data)
+                await router.push({name: 'room', params: {link: this.activeRoom.link}})
+            }
+
+        },
+
+        joinRoom(room: string) {
             const userStore = useUserStore()
             const user = userStore.getUser
             const onlineId = user.onlineId
@@ -64,29 +75,38 @@ export const useRoomStore = defineStore({
             }
         },
 
-        async leaveRoom(socket: Socket, room: string, tempUserId?: string) {
+        leaveRoom() {
             const userStore = useUserStore()
+            const user = userStore.getUser
+            const onlineId = user.onlineId
+            socket.emit("leaveRoom", {room: this.activeRoom.link, userOnlineId: onlineId})
+        },
+
+        changeOwner(link: string, newOwnerOnlineId: string) {
+            socket.emit("changeOwner", {room: link, newOwnerOnlineId})
         },
 
         roomSocketListeners() {
+            const userStore = useUserStore()
+
             socket.on("SomeoneJoined", (body: { room: IRoom, user: IUser | ITempUser }) => {
-                const userStore = useUserStore()
-                this.setActiveRoom(body.room)
+                console.log("someone joined", body)
+                if (body.room.link)
+                    this.setActiveRoom(body.room)
             });
 
-            socket.on("SomeoneLeft", (user: IUser | ITempUser) => {
-                console.log(user)
-                const userStore = useUserStore()
+            socket.on("SomeoneLeft", async (user: IUser | ITempUser) => {
                 if (user.onlineId === userStore.getUser.onlineId) {
                     this.resetActiveRoom()
+                    await router.replace({name: 'home'})
                 } else {
                     this.deleteParticipant(user.onlineId)
                 }
             })
 
-            socket.on("RoomClosed", () => {
+            socket.on("RoomClosed", async () => {
                 this.resetActiveRoom()
-
+                await router.replace({name: 'home'})
             })
 
         },

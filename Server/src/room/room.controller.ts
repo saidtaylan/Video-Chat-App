@@ -22,17 +22,11 @@ export class RoomController {
     constructor(private roomService: RoomService) {
     }
 
-    @UseGuards(OptionalJWTGuard)
     @Post('create')
     create(
-        @Body() body: { onlineId: string},
-        @Query('display-name') displayName: string
+        @Body() body: { onlineId: string },
     ) {
-        if (!displayName) {
-            return this.roomService.create(body.onlineId);
-        } else {
-            return this.roomService.create(body.onlineId, displayName)
-        }
+        return this.roomService.create(body.onlineId);
     }
 
     @UseGuards(JwtAuthGuard)
@@ -41,6 +35,11 @@ export class RoomController {
         const actives = this.roomService.getActives();
         if (Object.keys(actives).length > 0) return actives;
         throw new NotFoundException('Not any active rooms')
+    }
+
+    @Get('active/:link')
+    getActive(@Param('link') link: string) {
+        return this.roomService.findActive(link)
     }
 
     @UseGuards(JwtAuthGuard)
@@ -66,7 +65,7 @@ export class RoomController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @Get('l/:link')
+    @Get(':link')
     async getByLink(@Param('link') link: string) {
         return await this.roomService.getByLink(link);
     }

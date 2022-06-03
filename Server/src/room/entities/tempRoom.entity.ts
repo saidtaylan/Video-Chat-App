@@ -9,7 +9,7 @@ export interface TempRoom {
 
     participants: Array<LeanDocument<User> | TempUser>
 
-    owner: LeanDocument<User> | TempUser
+    owner: string
 
     type: string
 }

@@ -17,7 +17,7 @@ export class UserService {
     // <onlineId, User | TempUser>
     private onlineUsers: Record<string, TempUser | LeanDocument<User>> = {};
 
-    async enterSite(userId?: string) {
+    async enterSite(userId?: string, onlineId?: string) {
         if (!userId) {
             const onlineId = nanoid()
             const newTempUser: TempUser = {onlineId, displayName: '', likes: []}
@@ -27,7 +27,7 @@ export class UserService {
         const userDB: User = await this.userModel.findById(userId)
         if (userDB) {
             const leanUser: LeanDocument<User> = userDB.toObject({getters: true})
-            this.addOnline(leanUser)
+            this.addOnline({...leanUser, onlineId})
             return leanUser
         }
     }
@@ -84,7 +84,8 @@ export class UserService {
     }
 
     async logout(onlineId: string) {
-        return this.removeFromOnline(onlineId)
+        this.removeFromOnline(onlineId)
+        return await this.enterSite()
     }
 
     async createUser(createUserInput: CreateUserDto) {
@@ -149,6 +150,7 @@ export class UserService {
     }
 
     getOnline(onlineId: string) {
+        console.log("online user",this.onlineUsers[onlineId])
         return this.onlineUsers[onlineId]
     }
 

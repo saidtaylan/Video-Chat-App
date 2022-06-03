@@ -11,5 +11,5 @@ const asyncFunc = async () => {
 </script>
 
 <template>
-  <RouterView/>
+   <RouterView/>
 </template>

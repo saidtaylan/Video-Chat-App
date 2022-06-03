@@ -31,31 +31,34 @@ export const useUserStore = defineStore({
             this.user = <IUser | ITempUser>{}
         },
 
-        async enterSite() {
-            const userLoginTime: string | undefined = this.getUserFromLocal()
-            if (userLoginTime && "_id" in this.getUser) {
-                await axios.get(`${serverUrl}/enter-site?id=${this.getUser._id}`)
-                const userLoginLocalStorageTime = import.meta.env.VITE_USER_LOCAL_STORAGE_TIME
-                if (new Date().getTime() < (userLoginLocalStorageTime * 60 * 60 * 24)) {
-                    this.clearUserLocal()
-                    const tempUser: ITempUser = await axios.get(`${serverUrl}/enter-site`)
-                    this.setUser(tempUser)
-
-                }
-            } else {
-                const tempUser: ITempUser = await axios.get(`${serverUrl}/enter-site`)
-                this.setUser(tempUser)
+        removeDisplayName() {
+            if("displayName" in this.user) {
+                this.user.displayName = ''
             }
         },
 
-        async fetchUser(id: string) {
-            const resp = await axios.get(
-                `${serverUrl}/users/${id}`,
-                {headers: {Authorization: `Bearer ${this.getUser.accessToken}`}}
-            );
-            return resp.data;
+        async enterSite() {
+            const userLoginTime: string | undefined = this.getUserFromLocal()
+            if (userLoginTime && "_id" in this.getUser) {
+                console.log(this.getUser.onlineId, this.getUser._id)
+                await axios.post(`${serverUrl}/enter-site`, {userId: this.getUser._id, onlineId: this.getUser.onlineId})
+                const userLoginLocalStorageTime = import.meta.env.VITE_USER_LOCAL_STORAGE_TIME
+                if (new Date().getTime() < (userLoginLocalStorageTime * 60 * 60 * 24)) {
+                    this.clearUserLocal()
+                    const resp = await axios.post(`${serverUrl}/enter-site`, {}) // ITempUser döner.
+                    this.setUser(resp.data)
+
+                }
+            } else {
+                const resp = await axios.post(`${serverUrl}/enter-site`, {}) // ITempUser döner.
+                this.setUser(resp.data)
+            }
         },
 
+        async fetchAllUsers() {
+            const resp = await axios.get(`${serverUrl}/users`, {headers: {Authorization: `Bearer ${this.getUser.accessToken}`}})
+            console.log(resp)
+        },
 
         async login(body: { email: string, password: string }) {
             try {
@@ -82,6 +85,15 @@ export const useUserStore = defineStore({
             } catch (err) {
                 console.log(err)
             }
+        },
+
+        async logout() {
+            const resp = await axios.post(`${serverUrl}/users/logout`, {onlineId: this.getUser.onlineId})
+            if(resp.data) {
+                this.setUser(resp.data)
+                this.clearUserLocal()
+            }
+
         },
 
         localizeUser() {

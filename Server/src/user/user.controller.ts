@@ -17,7 +17,6 @@ import {UpdateUserDto} from './dto/update-user.dto';
 import {UserService} from './user.service';
 import {LoginDto} from "./dto/login.dto";
 import {JwtAuthGuard} from "../auth/guards/jwt.guard";
-import {OptionalJWTGuard} from "../auth/guards/optional-jwt.guard";
 
 @Controller('users')
 export class UserController {
@@ -26,7 +25,7 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard)
     @Get()
-    async getAll() {
+    async getAll(@Req() req: any) {
         return await this.userService.getUsers({});
     }
 
@@ -49,6 +48,11 @@ export class UserController {
     async login(
         @Body() body: LoginDto) {
         return await this.userService.login(body);
+    }
+
+    @Post('logout')
+    logout(@Body() body: {onlineId}) {
+        return this.userService.logout(body.onlineId);
     }
 
     @Post("register")

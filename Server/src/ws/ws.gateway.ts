@@ -10,11 +10,12 @@ import {Server, Socket} from "socket.io"
     }
 })
 export class WsGateway {
+
     constructor(private readonly wsService: WsService) {
     }
 
     @WebSocketServer()
-    server: Server;
+    server: Server
 
     @SubscribeMessage('like')
     like(@MessageBody() body: { room: string, userOnlineId: string, fromOnlineId: string }, @ConnectedSocket() socket: Socket) {
@@ -38,37 +39,41 @@ export class WsGateway {
     @SubscribeMessage('joinRoom')
     async joinRoom(@MessageBody() body: { room: string, userOnlineId?: string, displayName?: string }, @ConnectedSocket() socket: Socket) {
         if (!body.displayName) {
-            await this.wsService.joinRoom(socket, body.room, body.userOnlineId)
+            await this.wsService.joinRoom(this.server, socket, body.room, body.userOnlineId)
         } else if (body.displayName) {
-            await this.wsService.joinRoom(socket, body.room, body.userOnlineId, body.displayName)
+            await this.wsService.joinRoom(this.server, socket, body.room, body.userOnlineId, body.displayName)
         }
     }
 
     @SubscribeMessage('leaveRoom')
-    async leaveRoom(@MessageBody() body: { room: string, userOnlineId: string}, @ConnectedSocket() socket: Socket) {
-            await this.wsService.leaveRoom(socket, body.room, body.userOnlineId)
+    async leaveRoom(@MessageBody() body: { room: string, userOnlineId: string }, @ConnectedSocket() socket: Socket) {
+        await this.wsService.leaveRoom(this.server, socket, body.room, body.userOnlineId)
     }
 
     @SubscribeMessage('addPoint')
     async addPoint(@MessageBody() body: { user: string, room: string, point: number }, @ConnectedSocket() socket: Socket) {
-        await this.wsService.addPoint(socket, body)
+        await this.wsService.addPoint(this.server, socket, body)
     }
 
     @SubscribeMessage('subPoint')
     async subPoint(@MessageBody() body: { user: string, room: string, point: number }, @ConnectedSocket() socket: Socket) {
-        await this.wsService.subPoint(socket, body)
+        await this.wsService.subPoint(this.server, socket, body)
     }
 
     @SubscribeMessage('closeRoom')
     async closeRoom(@MessageBody() body: { room: string }, @ConnectedSocket() socket: Socket) {
-        await this.wsService.closeRoom(socket, body.room)
+        await this.wsService.closeRoom(this.server, socket, body.room)
     }
 
     @SubscribeMessage('disconnect')
-    async disconnect(@MessageBody() body: {onlineId: string}, @ConnectedSocket() socket: Socket) {
+    async disconnect(@MessageBody() body: { onlineId: string }, @ConnectedSocket() socket: Socket) {
         this.wsService.disconnect(body.onlineId)
     }
 
+    @SubscribeMessage('changeOwner')
+    changeOwner(@MessageBody() body: {room: string, newOwnerOnlineId: string}, @ConnectedSocket() socket: Socket) {
+        this.wsService.changeOwner(body)
 
+    }
 
 }

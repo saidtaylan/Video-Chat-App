@@ -40,7 +40,7 @@ export class AuthService {
 
     }
 
-    encrypt(data: {}) {
+    encrypt(data: {} | string) {
         return AES.encrypt(JSON.stringify(data), process.env.PASSCODE_ENCRYPT_SECRET).toString()
     }
 

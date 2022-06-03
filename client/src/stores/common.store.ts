@@ -5,6 +5,9 @@ export const useCommonStore = defineStore({
     id: 'common',
     state: () => ({
         errors: <Partial<Record<string, string>>>{},
+        micStateFunc: Function,
+        cameraStateFunc: Function,
+        leaveFunc: Function
     }),
     getters: {
         getErrors(state: any) {
@@ -13,6 +16,16 @@ export const useCommonStore = defineStore({
         getErrorByType(state: any) {
             return (errorType: string) => state.errors[errorType]
         },
+        getCameraStateFunc(state: any) {
+            return state.cameraStateFunc
+        },
+
+        getMicStateFunc(state: any) {
+            return state.micStateFunc
+        },
+        getLeaveFunc(state: any) {
+            return state.leaveFunc
+        }
     },
     actions: {
         addError(error: { type: string, message: string }) {
@@ -23,6 +36,15 @@ export const useCommonStore = defineStore({
         },
         clearErrors() {
             this.errors = []
+        },
+        setCameraStateFunc(func: Function) {
+            this.cameraStateFunc = func
+        },
+        setMicStateFunc(func: Function) {
+            this.micStateFunc = func
+        },
+        setLeaveFunc(func: Function) {
+            this.leaveFunc = func
         },
 
         commonSocketListeners() {
