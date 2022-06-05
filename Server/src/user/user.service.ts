@@ -150,7 +150,6 @@ export class UserService {
     }
 
     getOnline(onlineId: string) {
-        console.log("online user",this.onlineUsers[onlineId])
         return this.onlineUsers[onlineId]
     }
 

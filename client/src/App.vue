@@ -8,6 +8,7 @@ const asyncFunc = async () => {
 (async function () {
   await asyncFunc()
 }())
+
 </script>
 
 <template>

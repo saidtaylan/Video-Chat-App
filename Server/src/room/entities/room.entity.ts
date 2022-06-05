@@ -1,6 +1,7 @@
 import {Document, Types, LeanDocument} from 'mongoose';
 import {User} from 'src/user/entities/user.entity';
 import {TempUser} from "../../user/entities/tempUser.entity";
+import type {Participant, TempParticipant} from "./participant.entity"
 
 export interface Room extends Document {
     link: string
@@ -9,10 +10,10 @@ export interface Room extends Document {
 
     type: string
 
-    owner: Types.ObjectId
+    owner: Participant | TempParticipant
 
-    // for only online permanent room
-    participants: Array<LeanDocument<User> | TempUser>
+    // for only online room
+    participants: Array<Participant | TempParticipant>
 
     members: [User]
 

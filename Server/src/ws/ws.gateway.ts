@@ -73,7 +73,20 @@ export class WsGateway {
     @SubscribeMessage('changeOwner')
     changeOwner(@MessageBody() body: {room: string, newOwnerOnlineId: string}, @ConnectedSocket() socket: Socket) {
         this.wsService.changeOwner(body)
-
     }
 
+    @SubscribeMessage('dispatchStreamId')
+    dispatchStreamId(@MessageBody() body: {onlineId: string, link: string, streamId: string}, @ConnectedSocket() socket: Socket) {
+        this.wsService.dispatchStreamId(this.server, body);
+    }
+
+    @SubscribeMessage("switchUserMic")
+    switchUserMic(@MessageBody() body: {userSocketId: string, switch: boolean}, @ConnectedSocket() socket: Socket){
+        this.wsService.switchUserMic(socket, body)
+    }
+
+    @SubscribeMessage("switchUserCam")
+    switchUserCam(@MessageBody() body: {userSocketId: string, switch: boolean}, @ConnectedSocket() socket: Socket) {
+        this.wsService.switchUserCam(socket, body)
+    }
 }

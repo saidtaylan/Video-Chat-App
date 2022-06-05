@@ -3,8 +3,8 @@
        class="container mx-auto grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 pt-6 gap-8"
   >
     <div class="rounded border-gray-300 dark:border-gray-700"
-         v-for="attendee in components">
-      <component :is="attendee" v-bind="videoProps"/>
+         v-for="(attendee, idx) in components">
+      <component :is="attendee" v-bind="videoProps[idx]"/>
     </div>
   </div>
 </template>
@@ -14,8 +14,7 @@ import {onBeforeRouteLeave, useRoute, useRouter} from "vue-router"
 import {LocalStream, Client} from "ion-sdk-js";
 import {IonSFUJSONRPCSignal} from "ion-sdk-js/lib/signal/json-rpc-impl";
 import {useUserStore} from "@/stores/user.store";
-import {defineAsyncComponent, markRaw, reactive, ref, shallowRef} from "vue"
-import type {RemoteStream} from "ion-sdk-js/lib/ion";
+import {defineAsyncComponent, markRaw, reactive, ref} from "vue"
 import {useCommonStore} from "@/stores/common.store";
 import {useRoomStore} from "@/stores/room.store";
 
@@ -31,7 +30,6 @@ const components = ref(<any>[])
 
 const link = route.params.link as string
 
-
 let localStream: LocalStream | null;
 
 let client: Client
@@ -43,38 +41,20 @@ const webrtcConfig = {
   ],
 };
 
-const videoProps = reactive(<{ autoplay: boolean, controls: boolean, muted: boolean, srcObject: null | {}, speaker: boolean }>{
-  autoplay: true,
-  controls: false,
-  muted: false,
-  srcObject: null,
-})
+const videoProps = ref(<{ videoAttr: { autoplay: boolean, controls: boolean, muted: boolean, srcObject: null | {} }, extra: { own: boolean } }[]>[])
 
 const signal = new IonSFUJSONRPCSignal("ws://localhost:7000/ws");
 client = new Client(signal, webrtcConfig as any);
 signal.onopen = () => client.join(link, userStore.getUser.onlineId);
 client.ontrack = (track, stream) => {
-  videoProps["speaker"] = false
   if (track.kind === 'video') {
     const comp = defineAsyncComponent(() => import('@/components/Attendee.vue'))
+    videoProps.value.push({
+      videoAttr: {muted: false, autoplay: true, srcObject: stream, controls: false},
+      extra: {own: false}
+    })
     components.value.push(markRaw(comp))
-    track.onunmute = () => {
-      videoProps["muted"] = false
-      videoProps["srcObject"] = stream
-      stream.onremovetrack = () => {
-        videoProps["muted"] = false
-        localStream = null
-        videoProps["srcObject"] = null
-      }
-    }
   }
-}
-
-console.log(client)
-
-client.onspeaker = () => {
-  console.log("konuşuyom")
-  roomStore.setIsSpeakingStatus(true)
 }
 
 const startPublish = () => {
@@ -85,9 +65,12 @@ const startPublish = () => {
   }).then((stream) => {
     localStream = stream
     const comp = defineAsyncComponent(() => import('@/components/Attendee.vue'))
+    videoProps.value.push({
+      videoAttr: {muted: true, autoplay: true, srcObject: stream, controls: false},
+      extra: {own: true}
+    })
     components.value.push(markRaw(comp))
-    videoProps["muted"] = false
-    videoProps["srcObject"] = localStream
+    roomStore.addStreamId(stream.id)
     client.publish(stream);
   }).catch(console.error);
 }
@@ -106,27 +89,29 @@ const changeCameraState = (on: boolean) => {
   }
 }
 
-const leave = async (next?: Function) => {
-  if (window.confirm("Görüşmeden ayrılmak istediğinize emin misiniz?")) {
-    userStore.removeDisplayName()
-    localStream!.getTracks().forEach((track) => {
-      track.stop();
-    });
-    client.leave()
-    signal.close()
-    await roomStore.leaveRoom()
-    if (roomStore.getActiveRoom.owner === userStore.getUser.onlineId) {
-      roomStore.changeOwner(link, roomStore.getActiveRoom.participants[Math.floor(Math.random() * (roomStore.getActiveRoom.participants.length - 1))].onlineId)
-    }
-    if (next) {
-      next()
-    }
-    router.go(-1)
-  }
+const leave = async () => {
+  await router.replace({name: 'home'})
+}
+
+const leaveProcess = async () => {
+  userStore.removeDisplayName()
+  localStream!.getTracks().forEach((track) => {
+    track.stop();
+  });
+  client.leave()
+  signal.close()
+  await roomStore.leaveRoom()
 }
 
 onBeforeRouteLeave(async (to, from, next) => {
-  await leave(next)
+  if (window.confirm("Görüşmeden ayrılmak istediğinize emin misiniz?")) {
+    await leaveProcess()
+    if (roomStore.getActiveRoom.owner === userStore.getUser.onlineId) {
+      roomStore.changeOwner(link, roomStore.getActiveRoom.participants[Math.floor(Math.random() * (roomStore.getActiveRoom.participants.length - 1))].onlineId)
+    }
+    next(true)
+  }
+  else next(false)
 })
 
 commonStore.setCameraStateFunc(changeCameraState)

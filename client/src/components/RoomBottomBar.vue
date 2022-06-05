@@ -39,15 +39,19 @@ const leave = () => {
   commonStore.getLeaveFunc()
 };
 
-const micState = ref(true)
+const micState = computed(() => {
+  return commonStore.getMicState
+})
 const changeMicState = () => {
-  micState.value = !micState.value
+  commonStore.setMicState(!micState.value)
   commonStore.getMicStateFunc(micState.value)
 }
 
-const cameraState = ref(true)
+const cameraState = computed(() => {
+  return commonStore.getCameraState
+})
 const changeCameraState = () => {
-  cameraState.value = !cameraState.value
+  commonStore.setCameraState(!cameraState.value)
   commonStore.getCameraStateFunc(cameraState.value)
 }
 

@@ -1,22 +1,28 @@
 <template>
-  <div class="mx-1 z-50 w-1/3 absolute">
+  <div class=" z-50"
+       :style="[baseStyle]"
+  >
     <div
-        class="lg:max-w-[356px] md:max-w-[356px] max-w-[343px] pb-52"
+        class=" w-max rounded outline-none bg-white shadow-md"
     >
-      <div class="mt-8">
-        <div
-            class="dropdown-one w-full rounded outline-none bg-white relative mt-2 shadow-md"
-        >
-          <div
-              class="shadow rounded w-full shadow px-3 py-2 absolute top-16 right-0 bg-white shadow-lg"
-              id="drop-down-div"
-          >
-            <slot></slot>
-          </div>
-        </div>
+      <div class="rounded w-full px-3 py-2 bg-white shadow-lg"
+      >
+        <slot></slot>
       </div>
     </div>
-  </div>w
-
-
+  </div>
 </template>
+
+<script setup lang="ts">
+import {computed} from "vue";
+
+const props = defineProps(['menuAxisX', 'menuAxisY'])
+
+const baseStyle = computed(() => {
+  return {
+    'position': 'absolute',
+    'left': props.menuAxisX + 'px',
+    'top': props.menuAxisY + 'px',
+  }
+})
+</script>

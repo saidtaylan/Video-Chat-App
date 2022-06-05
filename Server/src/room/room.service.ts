@@ -10,6 +10,7 @@ import {TempRoom} from "./entities/tempRoom.entity";
 import {LeanDocument} from "mongoose"
 import {nanoid} from "nanoid";
 import {UserModel} from "../user/user.model";
+import {Participant, TempParticipant} from "./entities/participant.entity";
 
 @Injectable()
 export class RoomService {
@@ -35,7 +36,7 @@ export class RoomService {
             const passcode = this.authService.encrypt(passcodeOriginal);
             const room = {
                 link,
-                owner: userOnlineId,
+                owner: user,
                 passcode,
                 participants: [],
                 type: 'normal'
@@ -111,10 +112,9 @@ export class RoomService {
     }
 
     findActive(link: string) {
-        if(this.isOnlineRoomPermanent(link)) {
+        if (this.isOnlineRoomPermanent(link)) {
             return this.activeRooms.permanent[link]
-        }
-        else {
+        } else {
             return this.activeRooms.temporary[link]
         }
     }
@@ -136,7 +136,7 @@ export class RoomService {
         return this.activeRooms.temporary[link] = room
     }
 
-    addParticipant(link: string, user: LeanDocument<User> | TempUser) {
+    addParticipant(link: string, user: Participant | TempParticipant) {
         if (this.isOnlineRoomPermanent(link)) {
             this.activeRooms.permanent[link].participants.push(user)
             return this.activeRooms.permanent[link]
@@ -148,8 +148,7 @@ export class RoomService {
     isOnlineRoomPermanent(link: string) {
         if (link in this.activeRooms.permanent) {
             return true
-        }
-        else if (link in this.activeRooms.temporary) {
+        } else if (link in this.activeRooms.temporary) {
             return false
         }
     }
@@ -198,9 +197,26 @@ export class RoomService {
         return this.activeRooms.temporary[body.room].participants[body.userOnlineId].likes.filter(l => l !== body.fromOnlineId)
     }
 
-    changeOwner(body: {room: string, newOwnerOnlineId: string}) {
+    changeOwner(body: { room: string, newOwnerOnlineId: string }) {
         const room = this.findActive(body.room)
         const user = this.userService.getOnline(body.newOwnerOnlineId)
-        console.log(room.owner)
+    }
+
+    addStreamId(body: { onlineId: string, link: string, streamId: string }) {
+        if (this.isOnlineRoomPermanent(body.link)) {
+            this.activeRooms.permanent[body.link].participants.find((p) => {
+                if (p.onlineId === body.onlineId) {
+                    p.streamId = body.streamId
+                }
+            })
+            return this.activeRooms.permanent[body.link]
+        } else {
+            this.activeRooms.temporary[body.link].participants.forEach((p) => {
+                if (p.onlineId === body.onlineId) {
+                    p.streamId = body.streamId
+                }
+            })
+            return this.activeRooms.temporary[body.link]
+        }
     }
 }

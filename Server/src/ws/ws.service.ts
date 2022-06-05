@@ -14,7 +14,6 @@ import {WebSocketServer} from "@nestjs/websockets";
 @Injectable()
 export class WsService {
     constructor(private readonly roomModel: RoomModel, private readonly userModel: UserModel, private roomService: RoomService, private userService: UserService) {
-        console.log("service constructor")
     }
 
     like(body: { room: string, userOnlineId: string, fromOnlineId: string }) {
@@ -46,13 +45,22 @@ export class WsService {
                         type: 'JoinError', message: 'You cannot join a permanent room if you are not a registered user'
                     })
                 }
-                const roomLastStatus = this.roomService.addParticipant(room.link, {...user, displayName})
+                const roomLastStatus = this.roomService.addParticipant(room.link, {
+                    ...user,
+                    displayName,
+                    streamId: '',
+                    socketId: socket.id
+                })
                 socket.join(room.link)
                 return server.in(room.link).emit("SomeoneJoined", {
                     user, room: roomLastStatus
                 });
             }
-            const roomLastStatus = this.roomService.addParticipant(room.link, user)
+            const roomLastStatus = this.roomService.addParticipant(room.link, {
+                ...user,
+                streamId: '',
+                socketId: socket.id
+            })
             const roomScores = user.score.points.filter(point => point.room === link)
             socket.join(room.link)
             if (roomScores.length > 0) {
@@ -78,10 +86,10 @@ export class WsService {
         }
         const lastStatusRoom = this.roomService.removeParticipant(link, userOnlineId);
         socket.leave(link)
-        if (Object.keys(lastStatusRoom.participants).length === 0) {
+        if (lastStatusRoom.participants.length === 0) {
             return socket.emit("RoomClosed", {
-                type: 'RoomEmptySoClosed',
-                message: 'Room is empty because room has closed'
+                type: 'RoomEmptyBcClosed',
+                message: 'Room has closed because room is empty because '
             })
         }
         return server.in(link).emit("SomeoneLeft", {room: lastStatusRoom, user});
@@ -124,5 +132,21 @@ export class WsService {
 
     changeOwner(body: { room: string, newOwnerOnlineId: string }) {
         this.roomService.changeOwner(body)
+    }
+
+    dispatchStreamId(server: Server, body: { onlineId: string, link: string, streamId: string }) {
+        const room = this.roomService.findActive(body.link)
+        if (room) {
+            const roomLastStatus = this.roomService.addStreamId(body)
+            server.in(body.link).emit("AddedStreamId", roomLastStatus)
+        }
+    }
+
+    switchUserMic(socket: Socket, body: { userSocketId: string, switch: boolean }) {
+        socket.to(body.userSocketId).emit("YourMicSwitched", {status: body.switch})
+    }
+
+    switchUserCam(socket: Socket, body: { userSocketId: string, switch: boolean }) {
+        socket.to(body.userSocketId).emit("YourCameraSwitched", {status: body.switch})
     }
 }

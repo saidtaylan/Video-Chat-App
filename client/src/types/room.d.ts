@@ -1,3 +1,6 @@
+type IParticipant = IUser & { streamId: string, socketId: string }
+type ITempParticipant = ITempUser & { streamId: string, socketId: string }
+
 interface IRoom {
     link: string;
 
@@ -11,7 +14,7 @@ interface IRoom {
 
     hosts: [IUser];
 
-    participants: [IUser | ITempUser];
+    participants: [IParticipant | ITempParticipant];
 
     _id: string;
 }
