@@ -61,9 +61,9 @@ export const useRoomStore = defineStore({
         joinRoom(room: string) {
             const userStore = useUserStore()
             const user = userStore.getUser
-            // if (window.localStorage.getItem("inMeeting") === user._id) {
-            //     return router.replace({name: 'home'})
-            // }
+            if (window.localStorage.getItem("inMeeting") === user._id) {
+                return router.replace({name: 'home'})
+            }
             const onlineId = user.onlineId
             if ("displayName" in user) {
                 socket.emit("joinRoom", {room, userOnlineId: onlineId, displayName: user.displayName});
@@ -110,9 +110,9 @@ export const useRoomStore = defineStore({
             socket.on("SomeoneJoined", (body: { room: IRoom, user: IParticipant | ITempParticipant }) => {
                 if (body.room.link) {
                     this.setActiveRoom(body.room)
-                    // if (this.getActiveRoom && "_id" in userStore.getUser) {
-                    //     window.localStorage.setItem("inMeeting", userStore.getUser._id)
-                    // }
+                    if (this.getActiveRoom && "_id" in userStore.getUser) {
+                        window.localStorage.setItem("inMeeting", userStore.getUser._id)
+                    }
                 }
             });
 
@@ -122,10 +122,11 @@ export const useRoomStore = defineStore({
                 } else {
                     this.deleteParticipant(user.onlineId)
                 }
-                // if (window.localStorage.getItem("inMeeting") === userStore.getUser?._id) {
-                //     console.log("left")
-                //     window.localStorage.removeItem("inMeeting")
-                // }
+                if ("_id" in userStore.getUser) {
+                    if (window.localStorage.getItem("inMeeting") === userStore.getUser._id) {
+                        window.localStorage.removeItem("inMeeting")
+                    }
+                }
             })
 
             socket.on("RoomClosed", async () => {

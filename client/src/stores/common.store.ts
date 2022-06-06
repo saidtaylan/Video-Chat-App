@@ -1,6 +1,7 @@
 import {defineStore} from "pinia";
 import {socket} from "@/utils/socketio";
 import {useRoomStore} from "@/stores/room.store";
+import {useUserStore} from "@/stores/user.store";
 
 export const useCommonStore = defineStore({
     id: 'common',
@@ -63,13 +64,18 @@ export const useCommonStore = defineStore({
         },
         commonSocketListeners() {
             const roomStore = useRoomStore()
+            const userStore = useUserStore()
             socket.on("error", (error: { type: string, message: string }) => {
                 this.addError(error)
                 // tiplere göre switch case yap
             })
 
             socket.on("disconnect", () => {
-                roomStore.leaveRoom()
+                if ("_id" in userStore.getUser) {
+                    if (window.localStorage.getItem("inMeeting") === userStore.getUser._id) {
+                        window.localStorage.removeItem("inMeeting")
+                    }
+                }
             })
         }
 

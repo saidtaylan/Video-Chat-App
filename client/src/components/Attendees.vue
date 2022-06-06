@@ -2,9 +2,8 @@
   <div ref="videoContainer"
        class="container mx-auto grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 pt-6 gap-8"
   >
-    <div class="rounded border-gray-300 dark:border-gray-700"
-         v-for="(attendee, idx) in components">
-      <component :is="attendee" v-bind="videoProps[idx]"/>
+    <div v-for="videoProp in videoProps" class="rounded border-gray-300 dark:border-gray-700">
+      <attendee v-bind="videoProp"/>
     </div>
   </div>
 </template>
@@ -14,9 +13,10 @@ import {onBeforeRouteLeave, useRoute, useRouter} from "vue-router"
 import {LocalStream, Client} from "ion-sdk-js";
 import {IonSFUJSONRPCSignal} from "ion-sdk-js/lib/signal/json-rpc-impl";
 import {useUserStore} from "@/stores/user.store";
-import {defineAsyncComponent, markRaw, reactive, ref} from "vue"
+import {ref} from "vue"
 import {useCommonStore} from "@/stores/common.store";
 import {useRoomStore} from "@/stores/room.store";
+import Attendee from "@/components/Attendee.vue"
 
 const commonStore = useCommonStore()
 const roomStore = useRoomStore()
@@ -26,8 +26,6 @@ const route = useRoute()
 const userStore = useUserStore()
 
 const videoContainer = ref(null)
-const components = ref(<any>[])
-
 const link = route.params.link as string
 
 let localStream: LocalStream | null;
@@ -41,19 +39,20 @@ const webrtcConfig = {
   ],
 };
 
-const videoProps = ref(<{ videoAttr: { autoplay: boolean, controls: boolean, muted: boolean, srcObject: null | {} }, extra: { own: boolean } }[]>[])
+const videoProps = ref(<{ videoAttr: { autoplay: boolean, controls: boolean, muted: boolean, srcObject: null | {} }, extra: { own: boolean, streamId: string } }[]>[])
 
 const signal = new IonSFUJSONRPCSignal("ws://localhost:7000/ws");
 client = new Client(signal, webrtcConfig as any);
 signal.onopen = () => client.join(link, userStore.getUser.onlineId);
 client.ontrack = (track, stream) => {
   if (track.kind === 'video') {
-    const comp = defineAsyncComponent(() => import('@/components/Attendee.vue'))
     videoProps.value.push({
       videoAttr: {muted: false, autoplay: true, srcObject: stream, controls: false},
-      extra: {own: false}
+      extra: {own: false, streamId: stream.id}
     })
-    components.value.push(markRaw(comp))
+  }
+  stream.onremovetrack = () => {
+    videoProps.value = videoProps.value.filter((v, idx) => v.extra.streamId !== stream.id)
   }
 }
 
@@ -64,16 +63,16 @@ const startPublish = () => {
     codec: "vp8"
   }).then((stream) => {
     localStream = stream
-    const comp = defineAsyncComponent(() => import('@/components/Attendee.vue'))
+    //const comp = defineComponent(() => import('@/components/Attendee.vue'))
     videoProps.value.push({
       videoAttr: {muted: true, autoplay: true, srcObject: stream, controls: false},
-      extra: {own: true}
+      extra: {own: true, streamId: stream.id}
     })
-    components.value.push(markRaw(comp))
     roomStore.addStreamId(stream.id)
     client.publish(stream);
   }).catch(console.error);
 }
+
 
 startPublish()
 
@@ -110,8 +109,7 @@ onBeforeRouteLeave(async (to, from, next) => {
       roomStore.changeOwner(link, roomStore.getActiveRoom.participants[Math.floor(Math.random() * (roomStore.getActiveRoom.participants.length - 1))].onlineId)
     }
     next(true)
-  }
-  else next(false)
+  } else next(false)
 })
 
 commonStore.setCameraStateFunc(changeCameraState)

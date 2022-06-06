@@ -40,7 +40,6 @@ import type {LocalStream} from "ion-sdk-js";
 import type {RemoteStream} from "ion-sdk-js/lib/ion";
 import {useCommonStore} from "@/stores/common.store";
 
-const commonStore = useCommonStore()
 const roomStore = useRoomStore()
 
 const props = defineProps<{
