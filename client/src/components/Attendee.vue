@@ -6,12 +6,12 @@
       <video class="rounded" ref="Video" v-bind="props.videoAttr"></video>
     </div>
   </div>
-  <dropdown :menuAxisX="contextMenuAxisX" :menuAxisY="contextMenuAxisY" v-if="isOpenContextMenu"
+  <dropdown :menuAxisX="contextMenuAxisX" :menuAxisY="contextMenuAxisY" v-if="isOpenContextMenu && isOwner && extra.own === false"
             v-click-away="closeContextMenu">
     <div
         class="flex items-center justify-between rounded text-gray-600 hover:text-gray-800 p-3"
     >
-      <button @click="switchUserMic" v-click-away="closeContextMenu" v-if="isOwner && extra.own === false">
+      <button @click="switchUserMic" v-click-away="closeContextMenu">
         {{ userMicStatus ? 'Sessize al' : 'Sesini aç' }}
         <mute-icon></mute-icon>
       </button>
@@ -19,7 +19,7 @@
     <div
         class="flex items-center justify-between rounded text-gray-600 hover:text-gray-800 p-3"
     >
-      <button @click="switchUserCam" v-click-away="closeContextMenu" v-if="isOwner && extra.own === false">
+      <button @click="switchUserCam" v-click-away="closeContextMenu">
         {{ userCamStatus ? 'Kamera kapat' : 'Kamera aç' }}
         <video-camera-off></video-camera-off>
       </button>

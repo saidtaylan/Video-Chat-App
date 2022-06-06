@@ -59,11 +59,11 @@ export const useRoomStore = defineStore({
         },
 
         joinRoom(room: string) {
-            if (window.localStorage.getItem("inMeeting") == "true") {
-                return router.replace({name: 'home'})
-            }
             const userStore = useUserStore()
             const user = userStore.getUser
+            // if (window.localStorage.getItem("inMeeting") === user._id) {
+            //     return router.replace({name: 'home'})
+            // }
             const onlineId = user.onlineId
             if ("displayName" in user) {
                 socket.emit("joinRoom", {room, userOnlineId: onlineId, displayName: user.displayName});
@@ -101,7 +101,6 @@ export const useRoomStore = defineStore({
         },
 
         switchUserCam(userSocketId: string, status: boolean) {
-            console.log("go emit")
             socket.emit("switchUserCam", {userSocketId, switch: status})
         },
 
@@ -111,7 +110,9 @@ export const useRoomStore = defineStore({
             socket.on("SomeoneJoined", (body: { room: IRoom, user: IParticipant | ITempParticipant }) => {
                 if (body.room.link) {
                     this.setActiveRoom(body.room)
-                    window.localStorage.setItem("inMeeting", "true")
+                    // if (this.getActiveRoom && "_id" in userStore.getUser) {
+                    //     window.localStorage.setItem("inMeeting", userStore.getUser._id)
+                    // }
                 }
             });
 
@@ -121,7 +122,10 @@ export const useRoomStore = defineStore({
                 } else {
                     this.deleteParticipant(user.onlineId)
                 }
-                window.localStorage.setItem("inMeeting", "false")
+                // if (window.localStorage.getItem("inMeeting") === userStore.getUser?._id) {
+                //     console.log("left")
+                //     window.localStorage.removeItem("inMeeting")
+                // }
             })
 
             socket.on("RoomClosed", async () => {
@@ -142,6 +146,10 @@ export const useRoomStore = defineStore({
                 console.log("came emit", body)
                 commonStore.setCameraState(body.status)
                 commonStore.getCameraStateFunc(body.status)
+            })
+
+            socket.on("OwnerChanged", (body: { newOwner: IParticipant | ITempParticipant }) => {
+                this.getActiveRoom.owner = body.newOwner
             })
         },
     },

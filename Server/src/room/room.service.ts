@@ -145,6 +145,13 @@ export class RoomService {
         return this.activeRooms.temporary[link]
     }
 
+    getParticipant(link: string, onlineId: string) {
+        if (this.isOnlineRoomPermanent(link)) {
+            return this.activeRooms.permanent[link].participants.find(p => p.onlineId === onlineId)
+        } else return this.activeRooms.temporary[link].participants.find(p => p.onlineId === onlineId)
+
+    }
+
     isOnlineRoomPermanent(link: string) {
         if (link in this.activeRooms.permanent) {
             return true
@@ -198,8 +205,17 @@ export class RoomService {
     }
 
     changeOwner(body: { room: string, newOwnerOnlineId: string }) {
-        const room = this.findActive(body.room)
-        const user = this.userService.getOnline(body.newOwnerOnlineId)
+        const participant = this.getParticipant(body.room, body.newOwnerOnlineId)
+        if (participant) {
+            if (this.isOnlineRoomPermanent(body.room)) {
+                this.activeRooms.permanent[body.room].owner = participant
+                return this.activeRooms.permanent[body.room].owner
+            }
+            else {
+                this.activeRooms.temporary[body.room].owner = participant
+                return this.activeRooms.temporary[body.room].owner
+            }
+        }
     }
 
     addStreamId(body: { onlineId: string, link: string, streamId: string }) {

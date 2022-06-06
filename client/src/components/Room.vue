@@ -3,8 +3,7 @@
       class="absolute left-4 right-4 bottom-4 top-4"
       @click="showRoomInfo = !showRoomInfo"
   ></info-icon>
-<template v-if="showRoomInfo" >
-  <dropdown :menuAxisX="dropdownProp.menuAxisY" :menuAxisY="dropdownProp.menuAxisY" v-click-away="showRoomInfo = false">
+  <dropdown :menuAxisX="dropdownProp.menuAxisY" :menuAxisY="dropdownProp.menuAxisY" v-if="showRoomInfo" >
 
     <div
         class="flex items-center justify-between rounded text-gray-600 hover:text-gray-800 p-3"
@@ -35,7 +34,6 @@
         }}</span>
     </div>
   </dropdown>
-</template>
   <room-pass
       v-if="!isOwner && passcode !== roomPasscode"
       @passcode="passcode = $event"

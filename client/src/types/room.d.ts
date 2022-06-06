@@ -8,7 +8,7 @@ interface IRoom {
 
     type: string;
 
-    owner: IUser | ITempUser
+    owner: IParticipant | ITempParticipant
 
     permanent: boolean;
 

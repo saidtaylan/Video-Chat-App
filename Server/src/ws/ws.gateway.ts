@@ -72,7 +72,7 @@ export class WsGateway {
 
     @SubscribeMessage('changeOwner')
     changeOwner(@MessageBody() body: {room: string, newOwnerOnlineId: string}, @ConnectedSocket() socket: Socket) {
-        this.wsService.changeOwner(body)
+        this.wsService.changeOwner(this.server, body)
     }
 
     @SubscribeMessage('dispatchStreamId')

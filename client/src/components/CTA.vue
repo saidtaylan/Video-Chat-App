@@ -17,12 +17,6 @@
               @click="createRoom">
             Görüşme başlat
           </button>
-          ya da
-          <button
-              class="text-base font-medium leading-4 text-indigo-700 bg-white sm:w-auto w-full rounded p-4 focus:outline-none hover:bg-gray-100 focus:ring-2 focus:ring-offset-2 focus:ring-white"
-              @click="createRoom">
-            Görüşmeye katıl
-          </button>
         </div>
       </div>
     </div>

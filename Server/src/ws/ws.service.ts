@@ -130,8 +130,10 @@ export class WsService {
         this.userService.removeFromOnline(onlineId)
     }
 
-    changeOwner(body: { room: string, newOwnerOnlineId: string }) {
-        this.roomService.changeOwner(body)
+    changeOwner(server: Server, body: { room: string, newOwnerOnlineId: string }) {
+        const newOwner = this.roomService.changeOwner(body)
+        server.in(body.room).emit("OwnerChanged", {newOwner})
+
     }
 
     dispatchStreamId(server: Server, body: { onlineId: string, link: string, streamId: string }) {
