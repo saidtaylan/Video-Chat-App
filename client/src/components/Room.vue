@@ -56,7 +56,7 @@ import {useRoomStore} from "@/stores/room.store";
 import {useUserStore} from "@/stores/user.store";
 import {useRoute} from "vue-router";
 
-import DisplayName from "@/components/TypeDisplayName.vue";
+import DisplayName from "@/components/typeDisplayName.vue";
 import RoomPass from "@/components/TypeRoomPass.vue";
 import Attendees from "@/components/Attendees.vue";
 import RoomBottomBar from "@/components/RoomBottomBar.vue";

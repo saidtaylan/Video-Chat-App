@@ -39,7 +39,7 @@ const webrtcConfig = {
   ],
 };
 
-const videoProps = ref(<{ videoAttr: { autoplay: boolean, controls: boolean, muted: boolean, srcObject: null | {} }, extra: { own: boolean, streamId: string } }[]>[])
+const videoProps = ref(<{ videoAttr: { autoplay: boolean, controls: boolean, muted: boolean, srcObject: {id: string} }, extra: { own: boolean, streamId: string } }[]>[])
 
 const signal = new IonSFUJSONRPCSignal("ws://localhost:7000/ws");
 client = new Client(signal, webrtcConfig as any);

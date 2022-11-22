@@ -64,7 +64,7 @@
                   class="bg-gray-200 border rounded  text-xs font-medium leading-none text-gray-800 py-3 w-full pl-3 mt-2">
             <option value="teacher">Teacher</option>
             <option value="student">Student</option>
-            <option value="normal" selected="selected">Normal</option>
+            <option value="normal" selected>Normal</option>
           </select>
         </div>
         <div class="mt-6  w-full">

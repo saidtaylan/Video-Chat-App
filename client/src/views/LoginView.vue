@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts" setup>
-import LoginComponent from "@/components/Login.vue"
+import LoginComponent from "@/components/login.vue"
 import RegisterComponent from "@/components/Register.vue"
 import {ref} from "vue"
 

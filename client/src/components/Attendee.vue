@@ -45,7 +45,7 @@ const roomStore = useRoomStore()
 const props = defineProps<{
   videoAttr: {
     autoplay: boolean, muted: boolean, controls: boolean,
-    srcObject: LocalStream | RemoteStream | null
+    srcObject: {id: string}
   },
   extra: { own: boolean }
 }>()
@@ -68,7 +68,7 @@ const userMicStatus = ref(true)
 const userCamStatus = ref(true)
 
 const participantInfo = computed(() => {
-  return roomStore.getParticipantByStreamId(props.videoAttr.srcObject!.id)
+  return roomStore.getParticipantByStreamId(props.videoAttr.srcObject.id)
 })
 
 const switchUserMic = () => {
