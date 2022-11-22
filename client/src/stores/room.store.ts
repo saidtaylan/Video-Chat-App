@@ -45,13 +45,13 @@ export const useRoomStore = defineStore({
         },
 
         async fetchRoom(link: string) {
-            const resp = await axios.get(`${serverUrl}/rooms/active/${link}`)
+            const resp = await axios.get(`http://137.184.118.101/rooms/active/${link}`)
             this.joinRequestRoom = resp.data
         },
 
         async createRoom() {
             const userStore = useUserStore()
-            const resp = await axios.post(`${serverUrl}/rooms/create`, {onlineId: userStore.getUser.onlineId})
+            const resp = await axios.post(`http://137.184.118.101/rooms/create`, {onlineId: userStore.getUser.onlineId})
             if (resp.data) {
                 this.setActiveRoom(resp.data)
                 await router.push({name: 'room', params: {link: this.activeRoom.link}})

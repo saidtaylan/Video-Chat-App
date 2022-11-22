@@ -41,29 +41,29 @@ export const useUserStore = defineStore({
             const userLoginTime: string | undefined = this.getUserFromLocal()
             if (userLoginTime && "_id" in this.getUser) {
                 console.log(this.getUser.onlineId, this.getUser._id)
-                await axios.post(`${serverUrl}/enter-site`, {userId: this.getUser._id, onlineId: this.getUser.onlineId})
+                await axios.post(`http://137.184.118.101/enter-site`, {userId: this.getUser._id, onlineId: this.getUser.onlineId})
                 const userLoginLocalStorageTime = import.meta.env.VITE_USER_LOCAL_STORAGE_TIME
                 if (new Date().getTime() < (userLoginLocalStorageTime * 60 * 60 * 24)) {
                     this.clearUserLocal()
-                    const resp = await axios.post(`${serverUrl}/enter-site`, {}) // ITempUser döner.
+                    const resp = await axios.post(`http://137.184.118.101/enter-site`, {}) // ITempUser döner.
                     this.setUser(resp.data)
 
                 }
             } else {
-                const resp = await axios.post(`${serverUrl}/enter-site`, {}) // ITempUser döner.
+                const resp = await axios.post(`http://137.184.118.101/enter-site`, {}) // ITempUser döner.
                 this.setUser(resp.data)
             }
         },
 
         async fetchAllUsers() {
-            const resp = await axios.get(`${serverUrl}/users`, {headers: {Authorization: `Bearer ${this.getUser.accessToken}`}})
+            const resp = await axios.get(`http://137.184.118.101/users`, {headers: {Authorization: `Bearer ${this.getUser.accessToken}`}})
             console.log(resp)
         },
 
         async login(body: { email: string, password: string }) {
             try {
                 // this returns user data
-                const resp = await axios.post(`${serverUrl}/users/login`, {...body, onlineId: this.getUser.onlineId})
+                const resp = await axios.post(`http://137.184.118.101/users/login`, {...body, onlineId: this.getUser.onlineId})
                 if (resp.data) {
                     this.setUser(resp.data)
                     this.localizeUser()
@@ -77,7 +77,7 @@ export const useUserStore = defineStore({
 
         async register(body: { name: string, lastName: string, email: string, password: string, role: string }) {
             try {
-                const resp = await axios.post(`${serverUrl}/users/register`, {...body, onlineId: this.getUser.onlineId})
+                const resp = await axios.post(`http://137.184.118.101/users/register`, {...body, onlineId: this.getUser.onlineId})
                 if (resp.data) {
                     this.setUser(resp.data)
                     await router.replace({name: 'home'})
@@ -88,7 +88,7 @@ export const useUserStore = defineStore({
         },
 
         async logout() {
-            const resp = await axios.post(`${serverUrl}/users/logout`, {onlineId: this.getUser.onlineId})
+            const resp = await axios.post(`http://137.184.118.101/users/logout`, {onlineId: this.getUser.onlineId})
             if(resp.data) {
                 this.setUser(resp.data)
                 this.clearUserLocal()
