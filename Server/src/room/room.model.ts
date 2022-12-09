@@ -92,10 +92,9 @@ export class RoomModel {
     async update(link: string, userInput: UpdateRoomDto) {
         let updatedRoom: Room;
         if (userInput.passcode) {
-            const passcode = this.authService.hashPassword(userInput.passcode);
             updatedRoom = await this.roomEntity.findByIdAndUpdate(
                 link,
-                {userInput, passcode},
+                userInput,
                 {new: true},
             );
         }

@@ -3,7 +3,8 @@ import {WsService} from './ws.service';
 import {Server, Socket} from "socket.io"
 
 
-@WebSocketGateway({
+@WebSocketGateway(3001, {
+    namespace: 'ws',
     extraHeaders: {},
     cors: {
         origin: '*',

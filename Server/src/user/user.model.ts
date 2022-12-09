@@ -27,18 +27,16 @@ export class UserModel {
     }
 
     async insert(userInput: CreateUserDto) {
-        const password = await this.authService.hashPassword(userInput.password);
-        const newUser = await new this.userEntity({...userInput, password}).save();
+        const newUser = await new this.userEntity(userInput).save();
         delete newUser.password;
         return newUser;
     }
 
     async update(id: string, userInput: UpdateUserDto) {
         if (userInput.password) {
-            const password = await this.authService.hashPassword(userInput.password);
             const updatedUser = await this.userEntity.findByIdAndUpdate(
                 id,
-                {...userInput, password},
+                userInput,
                 {new: true},
             );
             if (updatedUser) {

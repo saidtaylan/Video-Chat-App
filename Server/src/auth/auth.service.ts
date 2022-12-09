@@ -1,7 +1,6 @@
 import {forwardRef, HttpException, HttpStatus, Inject, Injectable,} from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
 import {InjectModel} from '@nestjs/mongoose';
-import * as bcrypt from 'bcrypt';
 import {User} from 'src/user/entities/user.entity';
 import {UserService} from 'src/user/user.service';
 import {Model} from 'mongoose';
@@ -9,6 +8,7 @@ import {sendMail} from 'src/helpers/sendMail';
 import {ConfirmToken} from './entities/accountConfirmToken.interface';
 import {AES, enc} from "crypto-js"
 import {UserModel} from "../user/user.model";
+import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AuthService {
@@ -25,15 +25,6 @@ export class AuthService {
     generateJWT(user: { id: string; email: string; role: string, onlineId: string }): string {
         return this.jwtService.sign(user);
     }
-
-    async hashPassword(password: string): Promise<string> {
-        return await bcrypt.hash(password, 12);
-    }
-
-    async comparePasswords(pass: string, hashedPass: string): Promise<boolean> {
-        return await bcrypt.compare(pass, hashedPass);
-    }
-
     async isAlreadyExist(email: string): Promise<boolean> {
         const user = await this.userModel.findOne({email});
         return !!user;
@@ -52,10 +43,7 @@ export class AuthService {
     async validateUser(email: string, password: string) {
         const candidateUser: any = await this.userModel.findOne({email})
         if (candidateUser) {
-            const isCredentialsTrue = await this.comparePasswords(
-                password,
-                candidateUser.password,
-            );
+            const isCredentialsTrue = password === candidateUser.password
             if (isCredentialsTrue) {
                 return candidateUser;
             }
@@ -65,7 +53,7 @@ export class AuthService {
     }
 
     async sendConfirmEmail(email: string, id: string) {
-        const confirmationToken = await bcrypt.hash(email, 10)
+        const confirmationToken = nanoid()
         await this.TokenModel.insertMany({
             userId: id,
             token: confirmationToken,
